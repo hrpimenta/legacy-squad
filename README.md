@@ -1,10 +1,15 @@
-# Legacy Squad Framework
+<p align="center">
+  <h1 align="center">Legacy Squad Framework</h1>
+  <p align="center"><strong>AI-Powered Legacy Modernization Platform</strong></p>
+  <p align="center"><em>Understand. Plan. Modernize.</em></p>
+  <p align="center">
+    <a href="README.pt-br.md">🇧🇷 Português</a> · <strong>🇺🇸 English</strong>
+  </p>
+</p>
 
-**AI-Powered Legacy Modernization Platform**
+---
 
-> **Understand. Plan. Modernize.**
-
-Legacy Squad é um framework open-source que se instala dentro do seu projeto legado com um único comando, analisa automaticamente o código-fonte, e disponibiliza agentes de IA especializados na sua IDE para produzir um diagnóstico completo — sem alterar uma linha de código.
+Legacy Squad is an open-source framework that installs inside your legacy project with a single command, automatically analyzes the codebase, and provides specialized AI agents in your IDE to produce a complete diagnostic — without changing a single line of code.
 
 ```bash
 npx legacy-squad install
@@ -12,88 +17,88 @@ npx legacy-squad install
 
 ---
 
-## O Problema
+## The Problem
 
-Sistemas legados sustentam processos críticos, mas frequentemente apresentam:
+Legacy systems support critical processes, but frequently suffer from:
 
-- Documentação inexistente ou desatualizada
-- Credenciais hardcoded em código-fonte
-- Regras de negócio escondidas em condicionais que ninguém documentou
-- Acoplamento que torna qualquer mudança arriscada
-- Medo de alterar código em produção
-- Dependência de 1-2 desenvolvedores que "conhecem o sistema"
+- Missing or outdated documentation
+- Hardcoded credentials in source code
+- Business rules buried in conditionals no one documented
+- Coupling that makes any change risky
+- Fear of modifying production code
+- Dependency on 1-2 developers who "know the system"
 
-Abordagens tradicionais (reescrita total, refatoração sem governança) são caras, lentas e arriscadas.
+Traditional approaches (full rewrites, unstructured refactoring) are expensive, slow, and risky.
 
-## A Solução
+## The Solution
 
-Legacy Squad combina **análise determinística** (scanner + compliance engine com regras OWASP/CWE) com **agentes de IA especializados** que rodam na sua IDE (Claude Code, Codex, Cursor) para produzir:
+Legacy Squad combines **deterministic analysis** (scanner + compliance engine with OWASP/CWE rules) with **specialized AI agents** that run in your IDE (Claude Code, Codex, Cursor) to produce:
 
-| Artefato | O que faz |
-|----------|-----------|
-| **Repo Index** | Inventário completo: stack, módulos, dependências, integrações, hotspots |
-| **Findings** | Achados de segurança com evidência, impacto, referência OWASP e recomendação |
-| **Security Assessment** | Análise profunda de autenticação, secrets, LGPD/GDPR, API security |
-| **Architecture Assessment** | Mapeamento C4, acoplamento, riscos estruturais, arquitetura alvo |
-| **Legacy Code Assessment** | Hotspots, migração JS→TS, duplicação, cobertura de testes |
-| **Business Rules Assessment** | 60+ regras extraídas do código, preservation checklist |
-| **Modernization Plan** | Roadmap incremental em fases com rollback e scores |
-| **PRS** | Product Refactor Specification — documento consolidado para decision makers |
+| Artifact | What it does |
+|----------|-------------|
+| **Repo Index** | Full inventory: stack, modules, dependencies, integrations, hotspots |
+| **Findings** | Security findings with evidence, impact, OWASP reference and recommendation |
+| **Security Assessment** | Deep analysis of auth, secrets, LGPD/GDPR, API security |
+| **Architecture Assessment** | C4 diagrams, coupling analysis, structural risks, target architecture |
+| **Legacy Code Assessment** | Hotspots, JS→TS migration, duplication, test coverage |
+| **Business Rules Assessment** | 60+ rules extracted from code, preservation checklist |
+| **Modernization Plan** | Incremental phased roadmap with rollback and scores |
+| **PRS** | Product Refactor Specification — consolidated report for decision makers |
 
 ---
 
 ## Quick Start
 
-### Pré-requisitos
+### Prerequisites
 
 - Node.js ≥ 18
-- Uma IDE com IA: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex), ou [Cursor](https://cursor.sh)
+- An AI-enabled IDE: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex), or [Cursor](https://cursor.sh)
 
-### Instalação
+### Installation
 
 ```bash
-cd seu-projeto-legado
+cd your-legacy-project
 npx legacy-squad install
 ```
 
-O comando:
-1. Detecta a stack (React Native, PHP, .NET, Java, Node — por manifesto)
-2. Escaneia o repositório e gera o inventário
-3. Roda o Compliance Engine (regras OWASP/CWE)
-4. Gera Context Packs por módulo
-5. Instala agentes como slash commands na IDE
-6. Verifica a instalação (8 checks)
+The command:
+1. Detects the stack (React Native, PHP, .NET, Java, Node — via manifest)
+2. Scans the repository and generates the inventory
+3. Runs the Compliance Engine (OWASP/CWE rules)
+4. Generates Context Packs per module
+5. Installs agents as slash commands in your IDE
+6. Verifies the installation (8 checks)
 
-### Uso com Claude Code
+### Usage with Claude Code
 
 ```bash
-claude                              # Abre Claude Code no projeto
-/legacy-squad-security              # Roda o Security Agent
-/legacy-squad-architecture          # Roda o Architecture Agent
-/legacy-squad-legacy-code           # Roda o Legacy Code Agent
-/legacy-squad-business-rules        # Roda o Business Rules Agent
-/legacy-squad-modernization         # Roda o Modernization Agent
-/legacy-squad-generate-prs          # Consolida tudo no PRS final
+claude                              # Open Claude Code in the project
+/legacy-squad-security              # Run Security Agent
+/legacy-squad-architecture          # Run Architecture Agent
+/legacy-squad-legacy-code           # Run Legacy Code Agent
+/legacy-squad-business-rules        # Run Business Rules Agent
+/legacy-squad-modernization         # Run Modernization Agent
+/legacy-squad-generate-prs          # Consolidate everything into the final PRS
 ```
 
-### Uso com Codex CLI
+### Usage with Codex CLI
 
 ```bash
-codex                               # Abre Codex no projeto
-# O AGENTS.md na raiz define os agentes disponíveis
-@legacy-squad-security              # Ativa o Security Agent
+codex                               # Open Codex in the project
+# AGENTS.md at the root defines available agents
+@legacy-squad-security              # Activate Security Agent
 ```
 
-### Outros Comandos
+### Other Commands
 
 ```bash
-npx legacy-squad scan               # Re-escaneia sem reinstalar agentes
-npx legacy-squad doctor             # Verifica saúde da instalação
+npx legacy-squad scan               # Re-scan without reinstalling agents
+npx legacy-squad doctor             # Verify installation health
 ```
 
 ---
 
-## Como Funciona
+## How It Works
 
 ```
                     ┌─────────────────────┐
@@ -127,7 +132,7 @@ npx legacy-squad doctor             # Verifica saúde da instalação
              └─────────────┼─────────────┘
                            │
                     ┌──────▼──────┐
-                    │   IDE + IA  │
+                    │  IDE + AI   │
                     │ (Claude Code│
                     │  Codex,     │
                     │  Cursor)    │
@@ -135,32 +140,32 @@ npx legacy-squad doctor             # Verifica saúde da instalação
                            │
                     ┌──────▼──────┐
                     │ Assessments │
-                    │ + PRS final │
+                    │ + Final PRS │
                     └─────────────┘
 ```
 
-**O framework prepara os dados e instala os agentes. A IA é executada pela IDE do dev.**
+**The framework prepares data and installs agents. AI runs in the dev's IDE.**
 
-Zero API key necessária. Zero chamada a servidor externo. Tudo local.
+Zero API keys required. Zero external server calls. Everything runs locally.
 
 ---
 
-## Estrutura Instalada no Projeto
+## Installed Structure
 
-Após `npx legacy-squad install`:
+After `npx legacy-squad install`:
 
 ```
-seu-projeto/
+your-project/
 ├── .legacy-squad/
 │   ├── config/
-│   │   └── project.yaml              # Configuração detectada
+│   │   └── project.yaml              # Detected configuration
 │   ├── memory/
-│   │   ├── repo-index.json            # Inventário do repositório
-│   │   ├── findings.json              # Achados do compliance engine
-│   │   └── context-packs.json         # Contexto por módulo
+│   │   ├── repo-index.json            # Repository inventory
+│   │   ├── findings.json              # Compliance engine findings
+│   │   └── context-packs.json         # Context per module
 │   ├── outputs/
-│   │   ├── assessments/               # Assessments dos agentes
-│   │   └── reports/                   # PRS consolidado
+│   │   ├── assessments/               # Agent assessments
+│   │   └── reports/                   # Consolidated PRS
 │   └── logs/
 │       └── install.log
 ├── .claude/
@@ -178,56 +183,56 @@ seu-projeto/
 
 ---
 
-## Agentes
+## Agents
 
 ### Security Agent (`/legacy-squad-security`)
 
-Analisa autenticação, secrets, armazenamento inseguro, exposição de PII e conformidade com leis de privacidade (LGPD, GDPR).
+Analyzes authentication, secrets, insecure storage, PII exposure, and privacy compliance (LGPD, GDPR).
 
-**Referências:** OWASP MASVS V2, OWASP ASVS, CWE Top 25, LGPD, GDPR, NIST SSDF
+**References:** OWASP MASVS V2, OWASP ASVS, CWE Top 25, LGPD, GDPR, NIST SSDF
 
 ### Architecture Agent (`/legacy-squad-architecture`)
 
-Mapeia arquitetura atual com diagramas C4, identifica acoplamento, riscos estruturais e propõe arquitetura alvo incremental.
+Maps current architecture with C4 diagrams, identifies coupling, structural risks, and proposes incremental target architecture.
 
-**Referências:** C4 Model, Clean Architecture, arc42, ADR
+**References:** C4 Model, Clean Architecture, arc42, ADR
 
 ### Legacy Code Agent (`/legacy-squad-legacy-code`)
 
-Identifica hotspots, duplicação, progresso de migração JS→TS, cobertura de testes e prioridades de refatoração.
+Identifies hotspots, duplication, JS→TS migration progress, test coverage, and refactoring priorities.
 
-**Referências:** Clean Code, Sonar Rules, Cognitive Complexity
+**References:** Clean Code, Sonar Rules, Cognitive Complexity
 
 ### Business Rules Agent (`/legacy-squad-business-rules`)
 
-Extrai regras de negócio escondidas no código — validações, permissões, fluxos, magic numbers, regras implícitas em catch blocks.
+Extracts business rules hidden in code — validations, permissions, flows, magic numbers, implicit rules in catch blocks.
 
-**Referências:** DDD, Event Storming
+**References:** DDD, Event Storming
 
 ### Modernization Agent (`/legacy-squad-modernization`)
 
-Sintetiza todos os assessments em um plano incremental com fases, rollback, Deployability Score (1-10) e Execution Readiness Score (0-100).
+Synthesizes all assessments into an incremental plan with phases, rollback, Deployability Score (1-10), and Execution Readiness Score (0-100).
 
-**Referências:** Strangler Fig, Branch by Abstraction, Progressive Delivery
+**References:** Strangler Fig, Branch by Abstraction, Progressive Delivery
 
 ### PRS Generator (`/legacy-squad-generate-prs`)
 
-Consolida todos os assessments no PRS (Product Refactor Specification) — o documento final para decision makers.
+Consolidates all assessments into the PRS (Product Refactor Specification) — the final document for decision makers.
 
 ---
 
-## Stacks Suportadas
+## Supported Stacks
 
-### Detecção por Manifesto (Layer 1 — determinística)
+### Manifest Detection (Layer 1 — deterministic)
 
-| Manifesto | Stack |
-|-----------|-------|
+| Manifest | Stack |
+|----------|-------|
 | `package.json` | Node.js, React, React Native, Expo, Next.js |
 | `composer.json` | PHP, Laravel |
 | `.csproj` | C#, .NET |
 | `pom.xml` | Java, Spring Boot |
 
-### Detecção por Extensão (Layer 2 — heurística)
+### Extension Detection (Layer 2 — heuristic)
 
 TypeScript, JavaScript, PHP, C#, Java, Python, Dart
 
@@ -235,34 +240,34 @@ TypeScript, JavaScript, PHP, C#, Java, Python, Dart
 
 ## Compliance Engine
 
-O scanner roda automaticamente regras determinísticas baseadas em OWASP e CWE:
+The scanner automatically runs deterministic rules based on OWASP and CWE:
 
-| Regra | Detecta | Referência |
-|-------|---------|------------|
-| SEC-CRED-001 | Credenciais hardcoded | OWASP MASVS, CWE-798 |
-| SEC-CRED-002 | Keystores/certificados no repositório | OWASP MASVS, CWE-312 |
-| SEC-LOG-001 | Console.log ativo em produção | CWE-532 |
-| SEC-LOG-002 | PII (CPF, SSN, IDs) em logs/external services | CWE-532, LGPD/GDPR |
-| SEC-ERR-001 | Catch blocks vazios | CWE-390 |
-| SEC-STORE-001 | Token em AsyncStorage | OWASP MASVS |
-| CQ-MIX-001 | JS e TS misturados | Clean Code |
-| CQ-DEP-001 | Dependências transitivas | Clean Code |
+| Rule | Detects | Reference |
+|------|---------|-----------|
+| SEC-CRED-001 | Hardcoded credentials | OWASP MASVS, CWE-798 |
+| SEC-CRED-002 | Keystores/certificates in repository | OWASP MASVS, CWE-312 |
+| SEC-LOG-001 | Active console.log in production | CWE-532 |
+| SEC-LOG-002 | PII (CPF, SSN, IDs) in logs/external services | CWE-532, LGPD/GDPR |
+| SEC-ERR-001 | Empty catch blocks | CWE-390 |
+| SEC-STORE-001 | Token in AsyncStorage | OWASP MASVS |
+| CQ-MIX-001 | Mixed JS and TS files | Clean Code |
+| CQ-DEP-001 | Transitive dependencies | Clean Code |
 
-Todo achado inclui: evidência (arquivo, linha, snippet), impacto, referência técnica e recomendação.
+Every finding includes: evidence (file, line, snippet), impact, technical reference, and recommendation.
 
 ---
 
-## Princípios
+## Principles
 
-| Princípio | Descrição |
-|-----------|-----------|
-| **Install-First** | Um comando instala tudo no projeto. Sem configuração manual. |
-| **IDE-Native** | Agentes são slash commands da IDE. A IA vem do ambiente do dev. |
-| **Evidence-Driven** | Todo achado tem evidência concreta (arquivo, linha, snippet). |
-| **Context-First** | Nenhum LLM recebe o repositório inteiro — apenas context packs. |
-| **Read-Only** | O framework não altera código. Apenas lê e gera relatórios. |
-| **Production-First** | Toda recomendação assume que o sistema está em produção. |
-| **Incremental** | Toda modernização é incremental, reversível e deployável. |
+| Principle | Description |
+|-----------|-------------|
+| **Install-First** | One command installs everything. No manual setup. |
+| **IDE-Native** | Agents are IDE slash commands. AI comes from the dev's environment. |
+| **Evidence-Driven** | Every finding has concrete evidence (file, line, snippet). |
+| **Context-First** | No LLM receives the entire repository — only context packs. |
+| **Read-Only** | The framework does not modify code. It only reads and generates reports. |
+| **Production-First** | Every recommendation assumes the system is in production. |
+| **Incremental** | Every modernization step is incremental, reversible, and deployable. |
 
 ---
 
@@ -290,18 +295,18 @@ The framework was validated against a **production mobile app** (~18k lines of c
 
 ### Community Edition (V1) — Open Source
 
-Foco: **Understand + Plan**
+Focus: **Understand + Plan**
 
 - Scanner, Compliance Engine, Context Manager
-- 7 agentes como slash commands
+- 7 agents as slash commands
 - PRS, assessments, modernization plan
-- Suporte a Claude Code, Codex, Cursor
+- Claude Code, Codex, Cursor support
 
-### Enterprise Edition (V2) — Em desenvolvimento
+### Enterprise Edition (V2) — In development
 
-Foco: **Modernize**
+Focus: **Modernize**
 
-- Execution Engine (refatoração assistida)
+- Execution Engine (AI-assisted refactoring)
 - Pull Request Engine
 - QA Gates
 - CI/CD Integration
@@ -314,16 +319,16 @@ Foco: **Modernize**
 
 - [x] Sprint 1 — Scanner + Compliance Engine
 - [x] Sprint 2 — Install command + IDE integration
-- [x] Sprint 3 — Context Manager (básico)
-- [x] Sprint 4 — Validação end-to-end com projeto real
+- [x] Sprint 3 — Context Manager (basic)
+- [x] Sprint 4 — End-to-end validation with real project
 - [ ] Sprint 5 — Multi-IDE (Cursor, Gemini CLI)
-- [ ] Sprint 6 — Regras para PHP, .NET, Java
+- [ ] Sprint 6 — Rules for PHP, .NET, Java
 - [ ] Sprint 7 — SDD + MMP agents
 - [ ] Sprint 8 — Execution Specs agent + npm publish
 
 ---
 
-## Desenvolvimento
+## Development
 
 ```bash
 git clone https://github.com/hrpimenta/legacy-squad.git
@@ -331,20 +336,20 @@ cd legacy-squad
 pnpm install
 pnpm approve-builds esbuild
 
-# Testes
+# Tests
 npx vitest run
 
-# Dev mode (sem build)
-npx tsx apps/cli/src/index.ts install -p /caminho/do/projeto
+# Dev mode (no build)
+npx tsx apps/cli/src/index.ts install -p /path/to/project
 
 # Build
 node build.mjs
 
-# Testar versão bundled
-node dist/cli.mjs install -p /caminho/do/projeto
+# Test bundled version
+node dist/cli.mjs install -p /path/to/project
 ```
 
-### Estrutura do Monorepo
+### Monorepo Structure
 
 ```
 legacy-squad/
@@ -363,36 +368,36 @@ legacy-squad/
     └── plans/        # Architecture decisions, plans
 ```
 
-### Testes
+### Tests
 
 ```bash
-npx vitest run          # 28 testes (domain, scanner, compliance, agents)
+npx vitest run          # 28 tests (domain, scanner, compliance, agents)
 npx vitest --watch      # Watch mode
 ```
 
 ---
 
-## Contribuindo
+## Contributing
 
-1. Fork o repositório
-2. Crie uma branch (`git checkout -b feature/minha-feature`)
-3. Siga os padrões: TDD (Red→Green→Refactor), SOLID, Clean Architecture
-4. Rode os testes (`npx vitest run`)
-5. Abra um PR
+1. Fork the repository
+2. Create a branch (`git checkout -b feature/my-feature`)
+3. Follow the standards: TDD (Red→Green→Refactor), SOLID, Clean Architecture
+4. Run tests (`npx vitest run`)
+5. Open a PR
 
-### Formas de contribuir
+### Ways to contribute
 
-- Novas regras para o Compliance Engine (PHP, .NET, Java)
-- Melhorias nos templates de agentes
-- Suporte a novas IDEs
-- Documentação e tradução
-- Testes e fixtures para outras stacks
+- New rules for the Compliance Engine (PHP, .NET, Java)
+- Agent template improvements
+- New IDE support
+- Documentation and translation
+- Tests and fixtures for other stacks
 
 ---
 
-## Licença
+## License
 
-MIT — veja [LICENSE](LICENSE) para detalhes.
+MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
