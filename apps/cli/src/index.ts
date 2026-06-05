@@ -77,7 +77,10 @@ program
     console.log('    1. Open Claude Code: claude');
     console.log('    2. Run: /legacy-squad-security');
     console.log('    3. Run: /legacy-squad-architecture');
-    console.log('    4. Run: /legacy-squad-generate-prs');
+    console.log('    4. Run: /legacy-squad-legacy-code');
+    console.log('    5. Run: /legacy-squad-business-rules');
+    console.log('    6. Run: /legacy-squad-modernization');
+    console.log('    7. Run: /legacy-squad-generate-prs');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   });
 
