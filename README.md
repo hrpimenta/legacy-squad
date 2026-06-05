@@ -33,7 +33,7 @@ Legacy Squad combina **análise determinística** (scanner + compliance engine c
 |----------|-----------|
 | **Repo Index** | Inventário completo: stack, módulos, dependências, integrações, hotspots |
 | **Findings** | Achados de segurança com evidência, impacto, referência OWASP e recomendação |
-| **Security Assessment** | Análise profunda de autenticação, secrets, LGPD, API security |
+| **Security Assessment** | Análise profunda de autenticação, secrets, LGPD/GDPR, API security |
 | **Architecture Assessment** | Mapeamento C4, acoplamento, riscos estruturais, arquitetura alvo |
 | **Legacy Code Assessment** | Hotspots, migração JS→TS, duplicação, cobertura de testes |
 | **Business Rules Assessment** | 60+ regras extraídas do código, preservation checklist |
@@ -182,9 +182,9 @@ seu-projeto/
 
 ### Security Agent (`/legacy-squad-security`)
 
-Analisa autenticação, secrets, armazenamento inseguro, exposição de PII e conformidade LGPD.
+Analisa autenticação, secrets, armazenamento inseguro, exposição de PII e conformidade com leis de privacidade (LGPD, GDPR).
 
-**Referências:** OWASP MASVS V2, OWASP ASVS, CWE Top 25, LGPD, NIST SSDF
+**Referências:** OWASP MASVS V2, OWASP ASVS, CWE Top 25, LGPD, GDPR, NIST SSDF
 
 ### Architecture Agent (`/legacy-squad-architecture`)
 
@@ -242,7 +242,7 @@ O scanner roda automaticamente regras determinísticas baseadas em OWASP e CWE:
 | SEC-CRED-001 | Credenciais hardcoded | OWASP MASVS, CWE-798 |
 | SEC-CRED-002 | Keystores/certificados no repositório | OWASP MASVS, CWE-312 |
 | SEC-LOG-001 | Console.log ativo em produção | CWE-532 |
-| SEC-LOG-002 | PII (CPF) em logs/external services | CWE-532, LGPD |
+| SEC-LOG-002 | PII (CPF, SSN, IDs) em logs/external services | CWE-532, LGPD/GDPR |
 | SEC-ERR-001 | Catch blocks vazios | CWE-390 |
 | SEC-STORE-001 | Token em AsyncStorage | OWASP MASVS |
 | CQ-MIX-001 | JS e TS misturados | Clean Code |
@@ -266,21 +266,23 @@ Todo achado inclui: evidência (arquivo, linha, snippet), impacto, referência t
 
 ---
 
-## Caso de Uso Real
+## Validated in Production
 
-O framework foi validado contra um **app mobile React Native em produção** (cooperativa de saúde, 18k+ linhas, 98 dependências, transações financeiras reais):
+The framework was validated against a **production mobile app** (~18k lines of code, 98 dependencies, real financial transactions):
 
-**Compliance Engine (determinístico):** 7 findings por pattern matching
+**Compliance Engine (deterministic):** 7 findings via pattern matching
 
-**Agentes (IA via Claude Code):** +43 findings adicionais, incluindo:
-- Credenciais de service account decodificadas (OAuth Base64 → client:secret)
-- Flag no Firebase que bypassa 100% da autenticação em produção
-- Senha de cooperado gravada em texto plano no Firebase Realtime Database
-- CPF usado como chave primária no Firebase (enumerável)
-- Session recording capturando dados financeiros e médicos sem consentimento
-- 63 regras de negócio extraídas (11 implícitas)
-- Bug potencial em cálculo de vencimento de boleto
-- Roadmap de 36 semanas com scores: Deployability 3→9/10, Readiness 22→87/100
+**AI Agents (via Claude Code):** +43 additional findings, including:
+- Service account credentials decoded from Base64 in source code
+- Remote config flag capable of bypassing all authentication in production
+- User passwords logged in plaintext to a cloud database
+- PII used as primary key in a cloud database (enumerable)
+- Session recording capturing sensitive data without user consent
+- 63 business rules extracted from code (11 implicit, never documented)
+- Potential bug in a date calculation affecting core business logic
+- 36-week modernization roadmap with scores: Deployability 3→9/10, Readiness 22→87/100
+
+**Total:** 50 findings across 5 pillars, from a single `npx legacy-squad install` + 6 agent activations.
 
 ---
 
