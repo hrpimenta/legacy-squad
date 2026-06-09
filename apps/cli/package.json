@@ -8,7 +8,6 @@
     "@legacy-squad/scanner": "workspace:*",
     "@legacy-squad/context": "workspace:*",
     "@legacy-squad/rules": "workspace:*",
-    "@legacy-squad/providers": "workspace:*",
     "@legacy-squad/agents": "workspace:*",
     "@legacy-squad/output": "workspace:*",
     "commander": "^12.0.0"

@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { mkdtemp, writeFile, mkdir, stat, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import type { RepoIndex, Finding, ContextPack } from '@legacy-squad/core';
 import { ALL_AGENTS, SECURITY_AGENT } from '../src/agent-definitions.js';
 import { PromptBuilder } from '../src/prompt-builder.js';
+import { Installer } from '../src/installer.js';
 
 function createTestRepoIndex(): RepoIndex {
   return {
@@ -154,5 +158,72 @@ describe('PromptBuilder', () => {
 
     expect(prompt.prompt).toContain('stores');
     expect(prompt.prompt).toContain('Auth.ts');
+  });
+});
+
+describe('Installer — DT-004: gravação na raiz efetiva', () => {
+  it('deve escrever .legacy-squad no subdir quando o manifesto está aninhado', async () => {
+    // Cenário: zip extraído cria wrapper/inner/package.json e usuário roda
+    // o install apontando para wrapper. O framework precisa instalar dentro
+    // de inner/ (onde o projeto realmente vive) — não em wrapper/.
+    const tmpRoot = await mkdtemp(path.join(tmpdir(), 'ls-installer-'));
+    const wrapper = path.join(tmpRoot, 'wrapper');
+    const inner = path.join(wrapper, 'inner');
+    await mkdir(inner, { recursive: true });
+    await writeFile(
+      path.join(inner, 'package.json'),
+      JSON.stringify({ name: 'nested-app', dependencies: { 'react-native': '0.79.5' } }),
+      'utf-8',
+    );
+
+    // Templates dir mínimo (não importa o conteúdo para esse teste)
+    const templates = path.join(tmpRoot, 'templates');
+    await mkdir(templates, { recursive: true });
+    await writeFile(path.join(templates, 'security.md'), '# stub', 'utf-8');
+
+    const installer = new Installer();
+    const result = await installer.install(wrapper, templates);
+
+    expect(result.requestedRoot).toBe(wrapper);
+    expect(result.effectiveRoot).toBe(inner);
+    expect(result.stackNames).toContain('react-native');
+
+    // .legacy-squad deve estar em inner/, NÃO em wrapper/
+    await expect(stat(path.join(inner, '.legacy-squad', 'memory', 'repo-index.json')))
+      .resolves.toBeDefined();
+    await expect(stat(path.join(wrapper, '.legacy-squad'))).rejects.toThrow();
+
+    // O log de install deve registrar ambos os paths para auditoria
+    const logContent = await readFile(
+      path.join(inner, '.legacy-squad', 'logs', 'install.log'),
+      'utf-8',
+    );
+    expect(logContent).toContain(`Requested root: ${wrapper}`);
+    expect(logContent).toContain(`Effective root:  ${inner}`);
+
+    await rm(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('deve escrever na raiz solicitada quando o manifesto já está nela', async () => {
+    // Caso normal (não aninhado): comportamento legado preservado.
+    const tmpRoot = await mkdtemp(path.join(tmpdir(), 'ls-installer-'));
+    await writeFile(
+      path.join(tmpRoot, 'package.json'),
+      JSON.stringify({ name: 'flat-app', dependencies: { express: '^4.0.0' } }),
+      'utf-8',
+    );
+
+    const templates = path.join(tmpRoot, '__templates');
+    await mkdir(templates, { recursive: true });
+
+    const installer = new Installer();
+    const result = await installer.install(tmpRoot, templates);
+
+    expect(result.effectiveRoot).toBe(tmpRoot);
+    expect(result.requestedRoot).toBe(tmpRoot);
+    await expect(stat(path.join(tmpRoot, '.legacy-squad', 'memory', 'repo-index.json')))
+      .resolves.toBeDefined();
+
+    await rm(tmpRoot, { recursive: true, force: true });
   });
 });

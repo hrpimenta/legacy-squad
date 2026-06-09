@@ -1,5 +1,8 @@
 import { execSync } from 'node:child_process';
-import { cpSync, mkdirSync, chmodSync } from 'node:fs';
+import { cpSync, mkdirSync, chmodSync, rmSync } from 'node:fs';
+
+// Clean previous build — cross-platform (substitui o antigo prebuild "rm -rf dist")
+rmSync('dist', { recursive: true, force: true });
 
 // Bundle CLI
 execSync(

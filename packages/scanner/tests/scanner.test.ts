@@ -146,3 +146,69 @@ describe('RepoScanner — geração de RepoIndex', () => {
     expect(screenNames).toContain('home');
   });
 });
+
+describe('RepoScanner — DT-004: resolução de raiz aninhada', () => {
+  it('deve descer um nível quando o manifesto está em subdiretório único', async () => {
+    // Cenário típico: usuário extrai foo-main.zip → cria foo-main/foo-main/
+    // e roda `legacy-squad install -p foo-main/`. O scanner deve detectar
+    // o projeto real um nível abaixo.
+    const fs = createMockFs({
+      '/repo/inner/package.json': JSON.stringify({
+        name: 'inner-app',
+        dependencies: { 'react-native': '0.79.5' },
+      }),
+      '/repo/inner/src/index.ts': 'export default {};',
+    });
+
+    const scanner = new RepoScanner(fs);
+    const index = await scanner.scan('/repo');
+
+    expect(index.project.name).toBe('inner-app');
+    expect(index.project.type).toBe('mobile');
+    expect(norm(index.project.rootPath)).toBe('/repo/inner');
+    expect(index.stack.map((s) => s.name)).toContain('react-native');
+  });
+
+  it('deve manter raiz original quando o manifesto está direto na raiz', async () => {
+    // Caso comum (não aninhado): comportamento atual permanece igual.
+    const fs = createMockFs({
+      '/repo/package.json': JSON.stringify({
+        name: 'root-app',
+        dependencies: { express: '^4.0.0' },
+      }),
+    });
+
+    const scanner = new RepoScanner(fs);
+    const index = await scanner.scan('/repo');
+
+    expect(index.project.name).toBe('root-app');
+    expect(norm(index.project.rootPath)).toBe('/repo');
+  });
+
+  it('não deve descer quando há múltiplos subdiretórios candidatos', async () => {
+    // Ambiguidade: vários subdirs com manifestos = monorepo. Não tentamos
+    // adivinhar qual é o "real" — mantém a raiz original.
+    const fs = createMockFs({
+      '/repo/api/package.json': JSON.stringify({ name: 'api' }),
+      '/repo/web/package.json': JSON.stringify({ name: 'web' }),
+    });
+
+    const scanner = new RepoScanner(fs);
+    const index = await scanner.scan('/repo');
+
+    expect(norm(index.project.rootPath)).toBe('/repo');
+  });
+
+  it('deve manter raiz original quando nenhum nível tem manifesto', async () => {
+    // Repositório sem manifesto algum: fallback para layer 2 (extensões)
+    // continua funcionando, e rootPath permanece o original.
+    const fs = createMockFs({
+      '/repo/inner/src/main.py': 'print("hi")',
+    });
+
+    const scanner = new RepoScanner(fs);
+    const index = await scanner.scan('/repo');
+
+    expect(norm(index.project.rootPath)).toBe('/repo');
+  });
+});
