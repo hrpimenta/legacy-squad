@@ -14,30 +14,39 @@ export interface InstallResult {
   stackNames: string[];
   moduleCount: number;
   dependencyCount: number;
+  /** Raiz efetiva onde o framework foi escrito (pode diferir do path solicitado — DT-004). */
+  effectiveRoot: string;
+  /** Raiz solicitada pelo usuário via --path. */
+  requestedRoot: string;
 }
 
 export class Installer {
   /**
    * Instala o Legacy Squad Framework dentro do projeto alvo.
    * Escaneia o repo, gera dados, instala agentes como slash commands.
+   *
+   * DT-004: Se o manifesto estiver em subdiretório único (zip aninhado),
+   * o scanner resolve o `effectiveRoot` automaticamente — o installer
+   * escreve toda a estrutura nesse effective root, não no path original.
    */
   async install(projectRoot: string, templateDir: string): Promise<InstallResult> {
     const fs = new NodeFileSystem();
 
-    // Step 1: Scan
+    // Step 1: Scan — determina effectiveRoot (pode diferir de projectRoot)
     const scanner = new RepoScanner(fs);
     const repoIndex = await scanner.scan(projectRoot);
+    const effectiveRoot = repoIndex.project.rootPath;
 
     // Step 2: Compliance Engine
     const compliance = new ComplianceEngine(fs);
-    const findings = await compliance.evaluate(projectRoot, repoIndex);
+    const findings = await compliance.evaluate(effectiveRoot, repoIndex);
 
     // Step 3: Context Packs
     const contextBuilder = new ContextBuilder(fs);
-    const contextPacks = await contextBuilder.buildPacks(projectRoot, repoIndex);
+    const contextPacks = await contextBuilder.buildPacks(effectiveRoot, repoIndex);
 
     // Step 4: Write .legacy-squad/memory/
-    const memoryDir = path.join(projectRoot, '.legacy-squad', 'memory');
+    const memoryDir = path.join(effectiveRoot, '.legacy-squad', 'memory');
     await mkdir(memoryDir, { recursive: true });
 
     const repoIndexPath = path.join(memoryDir, 'repo-index.json');
@@ -49,7 +58,7 @@ export class Installer {
     await writeFile(contextPacksPath, JSON.stringify(contextPacks, null, 2), 'utf-8');
 
     // Step 5: Write .legacy-squad/config/
-    const configDir = path.join(projectRoot, '.legacy-squad', 'config');
+    const configDir = path.join(effectiveRoot, '.legacy-squad', 'config');
     await mkdir(configDir, { recursive: true });
 
     const projectConfig = {
@@ -82,17 +91,17 @@ export class Installer {
     );
 
     // Step 6: Create output directories
-    await mkdir(path.join(projectRoot, '.legacy-squad', 'outputs', 'reports'), { recursive: true });
-    await mkdir(path.join(projectRoot, '.legacy-squad', 'outputs', 'assessments'), { recursive: true });
-    await mkdir(path.join(projectRoot, '.legacy-squad', 'logs'), { recursive: true });
+    await mkdir(path.join(effectiveRoot, '.legacy-squad', 'outputs', 'reports'), { recursive: true });
+    await mkdir(path.join(effectiveRoot, '.legacy-squad', 'outputs', 'assessments'), { recursive: true });
+    await mkdir(path.join(effectiveRoot, '.legacy-squad', 'logs'), { recursive: true });
 
     // Step 7: Install Claude Code slash commands
-    const claudeCommandsDir = path.join(projectRoot, '.claude', 'commands', 'legacy-squad');
+    const claudeCommandsDir = path.join(effectiveRoot, '.claude', 'commands', 'legacy-squad');
     await mkdir(claudeCommandsDir, { recursive: true });
     await this.copySlashCommands(templateDir, claudeCommandsDir);
 
     // Step 8: Generate AGENTS.md for Codex
-    await this.generateAgentsMd(projectRoot, repoIndex.project.name);
+    await this.generateAgentsMd(effectiveRoot, repoIndex.project.name);
 
     // Step 9: Write install log
     const logContent = [
@@ -106,10 +115,12 @@ export class Installer {
       `Findings: ${findings.length}`,
       `Context Packs: ${contextPacks.length}`,
       `Agents installed: ${ALL_AGENTS.length}`,
+      `Requested root: ${projectRoot}`,
+      `Effective root:  ${effectiveRoot}`,
     ].join('\n');
 
     await writeFile(
-      path.join(projectRoot, '.legacy-squad', 'logs', 'install.log'),
+      path.join(effectiveRoot, '.legacy-squad', 'logs', 'install.log'),
       logContent,
       'utf-8',
     );
@@ -123,6 +134,8 @@ export class Installer {
       stackNames: repoIndex.stack.map((s) => s.name),
       moduleCount: repoIndex.modules.length,
       dependencyCount: repoIndex.dependencies.length,
+      effectiveRoot,
+      requestedRoot: projectRoot,
     };
   }
 

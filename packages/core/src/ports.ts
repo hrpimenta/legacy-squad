@@ -25,12 +25,6 @@ export interface ContextManagerPort {
   buildPacks(rootPath: string, repoIndex: RepoIndex): Promise<ContextPack[]>;
 }
 
-/** Generates narrative content via LLM or mock */
-export interface ProviderPort {
-  readonly name: string;
-  generate(prompt: string): Promise<string>;
-}
-
 /** Generates output artifacts (PRS, SDD, MMP) */
 export interface OutputGeneratorPort {
   generatePRS(

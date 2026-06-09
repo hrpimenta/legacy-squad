@@ -38,6 +38,12 @@
 **Decisão:** Toda saída do framework (findings, repo-index, context-packs) normalizada para POSIX `/`.
 **Consequências:** Output consistente cross-platform; testes portáveis; regex de detecção simplificado.
 
+### [2026-06-09] DA-007: Resolução de raiz efetiva com fallback de 1 nível
+**Contexto:** Zips extraídos costumam criar estrutura aninhada (`foo-main/foo-main/package.json`). O scanner antigo só olhava o path passado pela CLI, falhando silenciosamente nesses casos (zero stack detectada).
+**Alternativas:** (a) Forçar usuário a apontar o `--path` correto; (b) Buscar manifesto recursivamente em qualquer profundidade; (c) Descer no máximo 1 nível quando há subdir único com manifesto.
+**Decisão:** Opção (c). O `RepoScanner.scan()` retorna `project.rootPath` apontando para o `effectiveRoot`. Quando há múltiplos subdirs com manifesto (monorepo), mantém raiz original — não tenta adivinhar. O `Installer` grava `.legacy-squad/` no `effectiveRoot`, registrando `requestedRoot` vs `effectiveRoot` no `install.log` para auditoria. A CLI exibe aviso quando os dois divergem.
+**Consequências:** UX correto para o caso de zip aninhado sem ocultar monorepos. Auditoria preservada via log e via aviso visível. Quebra a invariante "tudo é escrito em `--path`" — quem consumir o `InstallResult` precisa usar `result.effectiveRoot`.
+
 ## Débitos Técnicos
 
 ### DT-001: AST-based detection para V2
@@ -55,17 +61,15 @@
 **Risco:** Médio — catálogo inicial é mobile-focused
 **Prazo sugerido:** Sprint 6
 
-### DT-004: Scanner buscar manifesto um nível abaixo do root
+### DT-004: Scanner buscar manifesto um nível abaixo do root  ✅ RESOLVIDO 2026-06-09
 **Framework:** Scanner V1
-**Risco:** Baixo — UX issue quando zip extrai com pasta aninhada
-**Prazo sugerido:** Sprint 2
+**Resolução:** `RepoScanner.resolveRoot()` desce 1 nível se houver subdir único com manifesto; ver DA-007. Coberto por 6 testes (4 unitários + 2 E2E com fs real).
 
-### DT-005: Remover package providers (substituído por IDE-Native)
+### DT-005: Remover package providers (substituído por IDE-Native)  ✅ RESOLVIDO 2026-06-09
 **Framework:** DA-005
-**Risco:** Baixo — MockProvider e ProviderFactory ficam obsoletos
-**Prazo sugerido:** Sprint 2
+**Resolução:** `packages/providers/` removido. `ProviderPort` removido de `core/ports.ts`. Dependência `@legacy-squad/providers` removida do `apps/cli/package.json`. Bundle do CLI ficou ~48KB (sem mudança perceptível). Zero importações residuais.
 
 ### DT-006: Suporte Codex (AGENTS.md) e Cursor (.cursor/rules)
 **Framework:** TAS Section 14
-**Risco:** Médio — Claude Code é primária, outros IDEs são secundários
+**Risco:** Médio — Claude Code é primária, outros IDEs são secundários. AGENTS.md já gerado; Cursor pendente.
 **Prazo sugerido:** Sprint 5

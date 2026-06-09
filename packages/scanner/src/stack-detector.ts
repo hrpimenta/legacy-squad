@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { FileSystemPort } from '@legacy-squad/core';
 import type { StackItem, DependencyItem, DependencyManager, ProjectType } from '@legacy-squad/core';
 
-interface ManifestResult {
+export interface ManifestResult {
   stack: StackItem[];
   dependencies: DependencyItem[];
   projectType: ProjectType;

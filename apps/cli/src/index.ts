@@ -46,6 +46,11 @@ program
     const installer = new Installer();
     const result = await installer.install(projectRoot, templateDir);
 
+    // DT-004: avisar quando o framework precisou descer um nível
+    if (result.effectiveRoot !== result.requestedRoot) {
+      console.log(`   ⚠️  Manifest found in subdirectory — using: ${result.effectiveRoot}`);
+    }
+
     console.log(`   Stack: ${result.stackNames.join(', ')}`);
     console.log(`   Modules: ${result.moduleCount} | Dependencies: ${result.dependencyCount}`);
     console.log(`   Findings: ${result.findingCount}`);
@@ -56,7 +61,7 @@ program
 
     console.log('\n✅ Step 3/3 — Verifying installation...');
     const doctor = new Doctor();
-    const checks = await doctor.check(projectRoot);
+    const checks = await doctor.check(result.effectiveRoot);
     const errors = checks.filter((c) => c.status === 'error');
     const ok = checks.filter((c) => c.status === 'ok');
     console.log(`   ${ok.length}/${checks.length} checks passed`);
@@ -70,6 +75,7 @@ program
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('  ✅ Installation complete!');
     console.log('');
+    console.log(`  📂 Root:   ${result.effectiveRoot}`);
     console.log('  📂 Data:   .legacy-squad/memory/');
     console.log('  🤖 Agents: .claude/commands/legacy-squad/');
     console.log('');
@@ -96,12 +102,17 @@ program
     const fs = new NodeFileSystem();
     const scanner = new RepoScanner(fs);
     const repoIndex = await scanner.scan(projectRoot);
+    const effectiveRoot = repoIndex.project.rootPath;
+
+    if (effectiveRoot !== projectRoot) {
+      console.log(`⚠️  Manifest found in subdirectory — using: ${effectiveRoot}\n`);
+    }
 
     const compliance = new ComplianceEngine(fs);
-    const findings = await compliance.evaluate(projectRoot, repoIndex);
+    const findings = await compliance.evaluate(effectiveRoot, repoIndex);
 
     const { mkdir, writeFile } = await import('node:fs/promises');
-    const memoryDir = path.join(projectRoot, '.legacy-squad', 'memory');
+    const memoryDir = path.join(effectiveRoot, '.legacy-squad', 'memory');
     await mkdir(memoryDir, { recursive: true });
 
     await writeFile(path.join(memoryDir, 'repo-index.json'), JSON.stringify(repoIndex, null, 2), 'utf-8');
@@ -110,7 +121,7 @@ program
     console.log(`✅ Stack: ${repoIndex.stack.map((s) => s.name).join(', ')}`);
     console.log(`📦 Modules: ${repoIndex.modules.length}`);
     console.log(`🔒 Findings: ${findings.length}`);
-    console.log(`📄 Updated: .legacy-squad/memory/\n`);
+    console.log(`📄 Updated: ${path.join(effectiveRoot, '.legacy-squad', 'memory')}\n`);
   });
 
 program
