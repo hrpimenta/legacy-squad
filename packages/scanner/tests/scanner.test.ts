@@ -102,6 +102,105 @@ describe('Stack Detector — Layer 1: Manifests', () => {
     const result = await detectFromManifests('/repo', fs);
     expect(result).toBeNull();
   });
+
+  it('deve detectar Symfony em composer.json', async () => {
+    const fs = createMockFs({
+      '/repo/composer.json': JSON.stringify({
+        name: 'my-symfony',
+        require: { php: '^8.2', 'symfony/framework-bundle': '^7.0' },
+      }),
+    });
+
+    const result = await detectFromManifests('/repo', fs);
+    expect(result).not.toBeNull();
+    const names = result!.stack.map((s) => s.name);
+    expect(names).toContain('php');
+    expect(names).toContain('symfony');
+  });
+
+  it('deve detectar CodeIgniter em composer.json', async () => {
+    const fs = createMockFs({
+      '/repo/composer.json': JSON.stringify({
+        name: 'ci-app',
+        require: { php: '^8.0', 'codeigniter4/framework': '^4.4' },
+      }),
+    });
+
+    const result = await detectFromManifests('/repo', fs);
+    expect(result).not.toBeNull();
+    expect(result!.stack.map((s) => s.name)).toContain('codeigniter');
+  });
+
+  it('deve detectar ASP.NET Core via Microsoft.NET.Sdk.Web', async () => {
+    const fs = createMockFs({
+      '/repo/App.csproj': `<Project Sdk="Microsoft.NET.Sdk.Web">
+        <PropertyGroup>
+          <TargetFramework>net8.0</TargetFramework>
+        </PropertyGroup>
+      </Project>`,
+    });
+
+    const result = await detectFromManifests('/repo', fs);
+    expect(result).not.toBeNull();
+    const names = result!.stack.map((s) => s.name);
+    expect(names).toContain('dotnet');
+    expect(names).toContain('asp.net');
+  });
+
+  it('deve distinguir .NET Framework (net4xx) de .NET moderno', async () => {
+    const fs = createMockFs({
+      '/repo/Legacy.csproj': `<Project Sdk="Microsoft.NET.Sdk">
+        <PropertyGroup>
+          <TargetFramework>net48</TargetFramework>
+        </PropertyGroup>
+      </Project>`,
+    });
+
+    const result = await detectFromManifests('/repo', fs);
+    const dotnet = result!.stack.find((s) => s.name === 'dotnet');
+    expect(dotnet!.version).toBe('net48');
+    // .NET Framework legado deve gerar a tag .net-framework
+    expect(result!.stack.map((s) => s.name)).toContain('.net-framework');
+  });
+
+  it('deve detectar Spring MVC clássico (sem Spring Boot)', async () => {
+    const fs = createMockFs({
+      '/repo/pom.xml': `<?xml version="1.0" encoding="UTF-8"?>
+        <project>
+          <dependencies>
+            <dependency>
+              <groupId>org.springframework</groupId>
+              <artifactId>spring-webmvc</artifactId>
+              <version>5.3.30</version>
+            </dependency>
+          </dependencies>
+        </project>`,
+    });
+
+    const result = await detectFromManifests('/repo', fs);
+    expect(result).not.toBeNull();
+    const names = result!.stack.map((s) => s.name);
+    expect(names).toContain('java');
+    expect(names).toContain('spring-mvc');
+    expect(names).not.toContain('spring-boot');
+  });
+
+  it('deve detectar Java Gradle (build.gradle)', async () => {
+    const fs = createMockFs({
+      '/repo/build.gradle': `
+        plugins { id 'org.springframework.boot' version '3.2.0' }
+        dependencies {
+          implementation 'org.springframework.boot:spring-boot-starter-web'
+        }
+      `,
+    });
+
+    const result = await detectFromManifests('/repo', fs);
+    expect(result).not.toBeNull();
+    const names = result!.stack.map((s) => s.name);
+    expect(names).toContain('java');
+    expect(names).toContain('spring-boot');
+  });
 });
 
 describe('Stack Detector — Layer 2: Extensions', () => {
