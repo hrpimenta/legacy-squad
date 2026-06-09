@@ -86,7 +86,7 @@ const packageJsonDetector: ManifestDetector = {
   },
 };
 
-/** Detects stack from composer.json (PHP) */
+/** Detects stack from composer.json (PHP / Laravel / Symfony / CodeIgniter) */
 const composerJsonDetector: ManifestDetector = {
   filename: 'composer.json',
   detect(content: string, filePath: string): ManifestResult {
@@ -96,11 +96,25 @@ const composerJsonDetector: ManifestDetector = {
     ];
     const dependencies: DependencyItem[] = [];
 
+    const FRAMEWORK_MAP: Array<{ pkg: string; name: string }> = [
+      { pkg: 'laravel/framework', name: 'laravel' },
+      { pkg: 'symfony/framework-bundle', name: 'symfony' },
+      { pkg: 'symfony/symfony', name: 'symfony' },
+      { pkg: 'codeigniter4/framework', name: 'codeigniter' },
+      { pkg: 'codeigniter/framework', name: 'codeigniter' },
+    ];
+
+    const allRequires = { ...(composer.require ?? {}), ...(composer['require-dev'] ?? {}) };
     for (const [name, version] of Object.entries(composer.require ?? {})) {
       if (name === 'php') continue;
       dependencies.push({ name, version: String(version), manager: 'composer', scope: 'runtime' });
-      if (name === 'laravel/framework') {
-        stack.push({ name: 'laravel', type: 'framework', version: String(version), source: filePath });
+    }
+
+    const seenFrameworks = new Set<string>();
+    for (const { pkg, name } of FRAMEWORK_MAP) {
+      if (allRequires[pkg] && !seenFrameworks.has(name)) {
+        seenFrameworks.add(name);
+        stack.push({ name, type: 'framework', version: String(allRequires[pkg]), source: filePath });
       }
     }
 
@@ -108,7 +122,7 @@ const composerJsonDetector: ManifestDetector = {
   },
 };
 
-/** Detects stack from .csproj (C#/.NET) */
+/** Detects stack from .csproj (C#/.NET) — distingue .NET Framework, .NET Core/5+, ASP.NET */
 const csprojDetector: ManifestDetector = {
   filename: '.csproj',
   detect(content: string, filePath: string): ManifestResult {
@@ -117,20 +131,36 @@ const csprojDetector: ManifestDetector = {
 
     const tfmMatch = content.match(/<TargetFramework>(.*?)<\/TargetFramework>/);
     if (tfmMatch) {
-      stack.push({ name: 'dotnet', type: 'runtime', version: tfmMatch[1], source: filePath });
+      const tfm = tfmMatch[1];
+      stack.push({ name: 'dotnet', type: 'runtime', version: tfm, source: filePath });
+
+      // net48, net472, net462, net4xx, net35 etc. → .NET Framework legado
+      // netcoreapp*, net5.0, net6.0, net7.0, net8.0, net9.0 → .NET moderno
+      if (/^net4\d|^net35/.test(tfm)) {
+        stack.push({ name: '.net-framework', type: 'runtime', version: tfm, source: filePath });
+      }
+    }
+
+    // SDK="Microsoft.NET.Sdk.Web" → ASP.NET Core
+    if (/Sdk\s*=\s*["']Microsoft\.NET\.Sdk\.Web["']/.test(content)) {
+      stack.push({ name: 'asp.net', type: 'framework', version: 'detected', source: filePath });
     }
 
     const pkgRefRegex = /<PackageReference\s+Include="([^"]+)"\s+Version="([^"]+)"/g;
     let match: RegExpExecArray | null;
     while ((match = pkgRefRegex.exec(content)) !== null) {
       dependencies.push({ name: match[1], version: match[2], manager: 'nuget', scope: 'runtime' });
+      // Detecção secundária por package
+      if (match[1].startsWith('Microsoft.AspNetCore') && !stack.some((s) => s.name === 'asp.net')) {
+        stack.push({ name: 'asp.net', type: 'framework', version: match[2], source: filePath });
+      }
     }
 
     return { stack, dependencies, projectType: 'backend', projectName: path.basename(filePath, '.csproj') };
   },
 };
 
-/** Detects stack from pom.xml (Java/Maven) */
+/** Detects stack from pom.xml (Java/Maven) — Spring Boot vs Spring MVC */
 const pomXmlDetector: ManifestDetector = {
   filename: 'pom.xml',
   detect(content: string, filePath: string): ManifestResult {
@@ -139,11 +169,34 @@ const pomXmlDetector: ManifestDetector = {
     ];
     const dependencies: DependencyItem[] = [];
 
-    if (content.includes('spring-boot')) {
+    if (/<artifactId>\s*spring-boot/i.test(content) || content.includes('spring-boot-starter')) {
       stack.push({ name: 'spring-boot', type: 'framework', version: 'detected', source: filePath });
+    } else if (/<artifactId>\s*spring-webmvc\s*<\/artifactId>/i.test(content) || content.includes('spring-webmvc')) {
+      stack.push({ name: 'spring-mvc', type: 'framework', version: 'detected', source: filePath });
     }
 
     return { stack, dependencies, projectType: 'backend', projectName: 'java-project' };
+  },
+};
+
+/** Detects stack from build.gradle / build.gradle.kts (Java/Gradle) */
+const gradleDetector: ManifestDetector = {
+  filename: 'build.gradle',
+  detect(content: string, filePath: string): ManifestResult {
+    const stack: StackItem[] = [
+      { name: 'java', type: 'language', version: 'unknown', source: filePath },
+    ];
+
+    if (
+      content.includes('org.springframework.boot') ||
+      content.includes('spring-boot-starter')
+    ) {
+      stack.push({ name: 'spring-boot', type: 'framework', version: 'detected', source: filePath });
+    } else if (content.includes('spring-webmvc')) {
+      stack.push({ name: 'spring-mvc', type: 'framework', version: 'detected', source: filePath });
+    }
+
+    return { stack, dependencies: [], projectType: 'backend', projectName: 'java-project' };
   },
 };
 
@@ -152,6 +205,7 @@ const ALL_DETECTORS: ManifestDetector[] = [
   composerJsonDetector,
   csprojDetector,
   pomXmlDetector,
+  gradleDetector,
 ];
 
 /** Manifest filenames to search for */
