@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtemp, writeFile, mkdir, stat, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, mkdir, stat, readFile, rm, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { RepoIndex, Finding, ContextPack } from '@legacy-squad/core';
 import { ALL_AGENTS, SECURITY_AGENT } from '../src/agent-definitions.js';
 import { PromptBuilder } from '../src/prompt-builder.js';
 import { Installer } from '../src/installer.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const TEMPLATES_DIR = path.resolve(__dirname, '../../../templates/claude-commands');
 
 function createTestRepoIndex(): RepoIndex {
   return {
@@ -225,5 +229,85 @@ describe('Installer — DT-004: gravação na raiz efetiva', () => {
       .resolves.toBeDefined();
 
     await rm(tmpRoot, { recursive: true, force: true });
+  });
+});
+
+describe('Slash command templates — DT-008: language-agnostic', () => {
+  const TEMPLATE_FILES = [
+    'security.md',
+    'architecture.md',
+    'legacy-code.md',
+    'business-rules.md',
+    'modernization.md',
+    'generate-prs.md',
+    'scan.md',
+  ];
+
+  it('todos os templates esperados existem em templates/claude-commands/', async () => {
+    const files = await readdir(TEMPLATES_DIR);
+    for (const t of TEMPLATE_FILES) {
+      expect(files, `template ausente: ${t}`).toContain(t);
+    }
+  });
+
+  it.each(['security.md', 'architecture.md', 'legacy-code.md', 'business-rules.md', 'modernization.md'])(
+    'template %s deve mencionar pelo menos 3 stacks distintas (multi-language)',
+    async (file) => {
+      const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
+      const lower = content.toLowerCase();
+
+      // Cada template precisa orientar o agente sobre múltiplas stacks
+      // para evitar regressão ao viés mobile-only original.
+      const stackHits = [
+        /\bphp\b|\blaravel\b|\bsymfony\b/.test(lower),
+        /\b\.net\b|\bdotnet\b|\bc#\b|\bcsharp\b|\basp\.net\b/.test(lower),
+        /\bjava\b|\bspring\b/.test(lower),
+        /\breact[\s-]?native\b|\bexpo\b|\bmobile\b/.test(lower),
+        /\bnode\b|\bexpress\b|\bnestjs\b/.test(lower),
+      ].filter(Boolean).length;
+
+      expect(stackHits, `${file} cobre apenas ${stackHits} stack(s); precisa de pelo menos 3`).toBeGreaterThanOrEqual(3);
+    },
+  );
+
+  it.each(['security.md', 'architecture.md', 'legacy-code.md', 'business-rules.md', 'modernization.md'])(
+    'template %s deve instruir leitura do repo-index.json',
+    async (file) => {
+      const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
+      expect(content, `${file} não referencia repo-index.json`).toContain('repo-index.json');
+    },
+  );
+
+  it.each(['security.md', 'architecture.md', 'legacy-code.md', 'business-rules.md', 'modernization.md'])(
+    'template %s deve declarar caminho de output em .legacy-squad/outputs/',
+    async (file) => {
+      const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
+      expect(content, `${file} não declara output em .legacy-squad/outputs/`).toMatch(
+        /\.legacy-squad\/outputs\//,
+      );
+    },
+  );
+
+  it('nenhum template deve hardcodar vocabulário exclusivamente mobile sem fallback', async () => {
+    // Bias-check: pega referências mobile-specific que NÃO podem aparecer
+    // sozinhas sem o equivalente backend ao lado.
+    const MOBILE_ONLY_TERMS = ['AsyncStorage', 'expo-secure-store', 'JS→TS', 'js→ts'];
+
+    for (const file of ['security.md', 'architecture.md', 'legacy-code.md', 'business-rules.md', 'modernization.md']) {
+      const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
+      for (const term of MOBILE_ONLY_TERMS) {
+        if (content.includes(term)) {
+          // Termo mobile presente — exige que pelo menos 1 termo backend apareça também
+          const hasBackendBalance =
+            /\bPDO\b|\bSqlParameter\b|\bPreparedStatement\b|\bcomposer\b|\bnuget\b|\bmaven\b|\bgradle\b/.test(
+              content,
+            );
+          expect(
+            hasBackendBalance,
+            `${file} usa "${term}" sem termo backend equivalente — viés mobile`,
+          ).toBe(true);
+        }
+      }
+    }
   });
 });

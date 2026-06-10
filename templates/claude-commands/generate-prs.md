@@ -9,6 +9,8 @@ Leia estes arquivos:
 ## Sua Missão
 Consolidar todos os assessments em um único **PRS (Product Refactor Specification)** — o documento final de diagnóstico do legado.
 
+Leia primeiro o `repo-index.json` para conhecer a stack do projeto. O PRS deve usar vocabulário da stack detectada (PHP/Laravel, .NET, Java/Spring, React Native, Node, etc.) ao consolidar findings e recomendações — nada de termos mobile-only se o projeto é PHP, nem termos backend se é mobile.
+
 ## Output
 Salve em: `.legacy-squad/outputs/reports/PRS.md`
 

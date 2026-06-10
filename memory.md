@@ -50,6 +50,12 @@
 **Decisão:** Opção (c). Cada regra OWASP/CWE tem um único ID (SEC-SQL-001, SEC-CRYPTO-001, etc.) com 2-4 patterns regex específicos por linguagem. O `appliesTo` usa a constante `BACKEND_LANGUAGES` que cobre `php/laravel/symfony/codeigniter/dotnet/csharp/asp.net/java/spring-boot/spring-mvc/backend`. Falsos positivos cross-language são raros porque cada pattern referencia APIs/sintaxe exclusivas (`$_GET` só em PHP, `MD5.Create` só em .NET, `.getParameter` só em Servlet/Spring).
 **Consequências:** Single source of truth por vulnerabilidade — recomendação e severidade não fragmentam por stack. Catálogo cresceu de 8 para 14 regras cobrindo OWASP Top 10 (A03 Injection, A02 Crypto, A05 Misconfig, A08 Deserialization). Tradeoff: regex é "linha-única" — quando uma vulnerabilidade exige cruzar 2+ linhas, recorre-se a um pattern mais específico (caso de `.readObject()` que sinaliza ObjectInputStream sem precisar achá-lo na mesma linha).
 
+### [2026-06-09] DA-009: Templates de agentes language-agnostic com seção "Stack-aware analysis"
+**Contexto:** Templates de slash commands (`templates/claude-commands/*.md`) tinham viés mobile/RN explícito — `legacy-code.md` falava em "Migração JS→TS"; `architecture.md` em "State management/Navegação"; `security.md` em "stores/telas de login". Quando o framework rodava em projeto PHP/Java/.NET, o Compliance Engine entregava findings corretos (DA-008) mas os agentes interpretavam com vocabulário fora do contexto.
+**Alternativas:** (a) Múltiplos templates por stack (`security-php.md`, `security-dotnet.md`, etc.); (b) Template único com sections condicionais por stack; (c) Manter genéricos e deixar a IA adaptar livremente.
+**Decisão:** Opção (b). Cada template ganha uma seção `## Stack-aware analysis` listando 4-6 stacks (PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, React Native/mobile, Node backend) com patterns e vocabulário específicos. A IA lê o `repo-index.json` antes e usa a seção pertinente. Mantém DRY (1 template por agente) e contextualização (vocabulário certo por stack). Verificado por testes que cravam multi-stack coverage e bias-check de termos mobile-only.
+**Consequências:** Templates passam de ~50-70 linhas para ~80-110 linhas (~50% maior). Em troca, ganho de qualidade dos assessments quando a stack não é mobile. Testes de garantia (5 cobrindo multi-stack + 1 bias-check) protegem contra regressão futura.
+
 ## Débitos Técnicos
 
 ### DT-001: AST-based detection para V2
@@ -84,7 +90,6 @@
 **Risco:** Baixo — regras genéricas por linguagem cobrem 80% do valor. Refinamento de framework cobre os 20% restantes.
 **Prazo sugerido:** Sprint 6+
 
-### DT-008: Templates de agentes language-agnostic
+### DT-008: Templates de agentes language-agnostic  ✅ RESOLVIDO 2026-06-09
 **Framework:** TAS Section 16 — Agentes
-**Risco:** Médio — templates atuais têm viés mobile/RN (AsyncStorage, LGPD/CPF). Quando o framework rodar em PHP/.NET/Java, os assessments precisam refletir as patterns dessas linguagens.
-**Prazo sugerido:** PR 2 do Track A (próximo)
+**Resolução:** 6 templates de slash command reescritos com seção `## Stack-aware analysis` cobrindo PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, React Native/mobile, Node backend. Coberto por 7 testes (multi-stack coverage + bias-check + invariantes de structure). Ver DA-009.
