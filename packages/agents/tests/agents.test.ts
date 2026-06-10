@@ -240,6 +240,9 @@ describe('Slash command templates — DT-008: language-agnostic', () => {
     'business-rules.md',
     'modernization.md',
     'generate-prs.md',
+    'generate-sdd.md',
+    'generate-mmp.md',
+    'generate-specs.md',
     'scan.md',
   ];
 
@@ -250,7 +253,16 @@ describe('Slash command templates — DT-008: language-agnostic', () => {
     }
   });
 
-  it.each(['security.md', 'architecture.md', 'legacy-code.md', 'business-rules.md', 'modernization.md'])(
+  it.each([
+    'security.md',
+    'architecture.md',
+    'legacy-code.md',
+    'business-rules.md',
+    'modernization.md',
+    'generate-sdd.md',
+    'generate-mmp.md',
+    'generate-specs.md',
+  ])(
     'template %s deve mencionar pelo menos 3 stacks distintas (multi-language)',
     async (file) => {
       const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
@@ -270,7 +282,16 @@ describe('Slash command templates — DT-008: language-agnostic', () => {
     },
   );
 
-  it.each(['security.md', 'architecture.md', 'legacy-code.md', 'business-rules.md', 'modernization.md'])(
+  it.each([
+    'security.md',
+    'architecture.md',
+    'legacy-code.md',
+    'business-rules.md',
+    'modernization.md',
+    'generate-sdd.md',
+    'generate-mmp.md',
+    'generate-specs.md',
+  ])(
     'template %s deve instruir leitura do repo-index.json',
     async (file) => {
       const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
@@ -278,7 +299,16 @@ describe('Slash command templates — DT-008: language-agnostic', () => {
     },
   );
 
-  it.each(['security.md', 'architecture.md', 'legacy-code.md', 'business-rules.md', 'modernization.md'])(
+  it.each([
+    'security.md',
+    'architecture.md',
+    'legacy-code.md',
+    'business-rules.md',
+    'modernization.md',
+    'generate-sdd.md',
+    'generate-mmp.md',
+    'generate-specs.md',
+  ])(
     'template %s deve declarar caminho de output em .legacy-squad/outputs/',
     async (file) => {
       const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
@@ -308,6 +338,40 @@ describe('Slash command templates — DT-008: language-agnostic', () => {
           ).toBe(true);
         }
       }
+    }
+  });
+
+  it('generate-sdd.md, generate-mmp.md e generate-specs.md devem consumir assessments anteriores', async () => {
+    // Estes templates são geradores consolidadores — devem referenciar
+    // os outputs dos agentes de análise como entrada.
+    const sdd = await readFile(path.join(TEMPLATES_DIR, 'generate-sdd.md'), 'utf-8');
+    expect(sdd).toContain('architecture-assessment.md');
+
+    const mmp = await readFile(path.join(TEMPLATES_DIR, 'generate-mmp.md'), 'utf-8');
+    expect(mmp).toContain('modernization-assessment.md');
+
+    const specs = await readFile(path.join(TEMPLATES_DIR, 'generate-specs.md'), 'utf-8');
+    expect(specs).toContain('MMP.md');
+  });
+
+  it('generate-specs.md deve declarar todos os campos obrigatórios da Execution Spec (FRAMEWORK_SPEC §8)', async () => {
+    const content = await readFile(path.join(TEMPLATES_DIR, 'generate-specs.md'), 'utf-8');
+    const REQUIRED_FIELDS = [
+      'id:',
+      'title:',
+      'pillar:',
+      'phase:',
+      'risk:',
+      'deployability_score:',
+      'human_approval_required:',
+      'affected_files:',
+      'objective:',
+      'acceptance_criteria:',
+      'rollback:',
+      'dependencies:',
+    ];
+    for (const field of REQUIRED_FIELDS) {
+      expect(content, `generate-specs.md não declara campo obrigatório "${field}"`).toContain(field);
     }
   });
 });
