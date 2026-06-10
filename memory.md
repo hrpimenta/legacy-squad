@@ -56,6 +56,12 @@
 **Decisão:** Opção (b). Cada template ganha uma seção `## Stack-aware analysis` listando 4-6 stacks (PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, React Native/mobile, Node backend) com patterns e vocabulário específicos. A IA lê o `repo-index.json` antes e usa a seção pertinente. Mantém DRY (1 template por agente) e contextualização (vocabulário certo por stack). Verificado por testes que cravam multi-stack coverage e bias-check de termos mobile-only.
 **Consequências:** Templates passam de ~50-70 linhas para ~80-110 linhas (~50% maior). Em troca, ganho de qualidade dos assessments quando a stack não é mobile. Testes de garantia (5 cobrindo multi-stack + 1 bias-check) protegem contra regressão futura.
 
+### [2026-06-09] DA-010: Geradores de artefatos consolidados (SDD, MMP, Specs) como slash commands
+**Contexto:** A FRAMEWORK_SPECIFICATION (§6-8) define 4 artefatos oficiais: PRS (diagnóstico), SDD (desenho técnico), MMP (plano mestre), Execution Specs (decomposição executável). Até a beta.7 só `generate-prs.md` existia. Sem SDD/MMP/Specs, o V1 entregava só metade do framework — diagnosticava bem, mas não desenhava o alvo nem decompunha em unidades de trabalho.
+**Alternativas:** (a) Implementar SDD/MMP/Specs como código TypeScript no `output` package (geradores determinísticos a partir de assessments); (b) Slash commands que delegam síntese pra IA com prompts estruturados.
+**Decisão:** Opção (b). SDD/MMP/Specs exigem síntese qualitativa (ADRs com justificativas, risk matrix com mitigações, specs com critérios de aceite binários) — algo que regex/templates determinísticos não conseguem. A IA é a ferramenta certa, com guard-rails via prompt estruturado. Cada template enumera estrutura obrigatória + regras invioláveis (rollback obrigatório em cada spec, no big-bang, business rules a preservar, etc.). Para Execution Specs, o template lista todos os 12 campos obrigatórios do schema FRAMEWORK_SPECIFICATION §8.
+**Consequências:** V1 do framework completo conforme especificação. Os 4 artefatos oficiais (PRS/SDD/MMP/Specs) podem ser gerados via slash commands no Claude Code. Cada gerador valida pré-requisitos (e.g., generate-mmp exige modernization-assessment.md). Tradeoff: qualidade dos artefatos depende da qualidade dos prompts e da IA — não há validação determinística do output (é prosa estruturada). Testes garantem invariantes estruturais (campos obrigatórios da spec, leitura de assessments anteriores, output em path canônico).
+
 ## Débitos Técnicos
 
 ### DT-001: AST-based detection para V2

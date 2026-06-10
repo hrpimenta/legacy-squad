@@ -144,12 +144,18 @@ export class Installer {
     targetDir: string,
   ): Promise<void> {
     const commandFiles = [
+      // Análise (rodam primeiro e produzem assessments)
       'security.md',
       'architecture.md',
       'legacy-code.md',
       'business-rules.md',
       'modernization.md',
+      // Geradores de artefatos consolidados (rodam depois dos análise)
       'generate-prs.md',
+      'generate-sdd.md',
+      'generate-mmp.md',
+      'generate-specs.md',
+      // Utilitário
       'scan.md',
     ];
 
