@@ -42,8 +42,11 @@ Legacy Squad combina **análise determinística** (scanner + compliance engine c
 | **Architecture Assessment** | Mapeamento C4, acoplamento, riscos estruturais, arquitetura alvo |
 | **Legacy Code Assessment** | Hotspots, migração JS→TS, duplicação, cobertura de testes |
 | **Business Rules Assessment** | 60+ regras extraídas do código, preservation checklist |
-| **Modernization Plan** | Roadmap incremental em fases com rollback e scores |
-| **PRS** | Product Refactor Specification — documento consolidado para decision makers |
+| **Modernization Assessment** | Roadmap incremental em fases com rollback e scores |
+| **PRS** | Product Refactor Specification — relatório consolidado de diagnóstico |
+| **SDD** | Software Design Document — arquitetura atual/alvo com ADRs |
+| **MMP** | Modernization Master Plan — roadmap em fases com scores de Execution Readiness e Deployability |
+| **Execution Specs** | Unidades de trabalho atômicas, individualmente deployáveis, com critérios de aceite binários e rollback |
 
 ---
 
@@ -73,12 +76,19 @@ O comando:
 
 ```bash
 claude                              # Abre Claude Code no projeto
-/legacy-squad-security              # Roda o Security Agent
-/legacy-squad-architecture          # Roda o Architecture Agent
-/legacy-squad-legacy-code           # Roda o Legacy Code Agent
-/legacy-squad-business-rules        # Roda o Business Rules Agent
-/legacy-squad-modernization         # Roda o Modernization Agent
-/legacy-squad-generate-prs          # Consolida tudo no PRS final
+
+# Passo 1 — Análise (5 agentes, rodar em ordem)
+/legacy-squad-security              # Security Agent
+/legacy-squad-architecture          # Architecture Agent
+/legacy-squad-legacy-code           # Legacy Code Agent
+/legacy-squad-business-rules        # Business Rules Agent
+/legacy-squad-modernization         # Modernization Agent
+
+# Passo 2 — Artefatos consolidados (4 geradores, rodar após a análise)
+/legacy-squad-generate-prs          # Product Refactor Specification
+/legacy-squad-generate-sdd          # Software Design Document
+/legacy-squad-generate-mmp          # Modernization Master Plan
+/legacy-squad-generate-specs        # Execution Specs (um YAML por unidade de trabalho)
 ```
 
 ### Uso com Codex CLI
@@ -164,8 +174,11 @@ seu-projeto/
 │   │   ├── findings.json              # Achados do compliance engine
 │   │   └── context-packs.json         # Contexto por módulo
 │   ├── outputs/
-│   │   ├── assessments/               # Assessments dos agentes
-│   │   └── reports/                   # PRS consolidado
+│   │   ├── assessments/               # Assessments dos agentes (5 .md)
+│   │   ├── reports/                   # PRS.md + PRS.json
+│   │   ├── sdd/                       # SDD.md + SDD.json
+│   │   ├── mmp/                       # MMP.md + MMP.json
+│   │   └── specs/                     # SPEC-*.yaml + INDEX.md
 │   └── logs/
 │       └── install.log
 ├── .claude/
@@ -177,7 +190,10 @@ seu-projeto/
 │           ├── business-rules.md      # /legacy-squad-business-rules
 │           ├── modernization.md       # /legacy-squad-modernization
 │           ├── generate-prs.md        # /legacy-squad-generate-prs
-│           └── scan.md               # /legacy-squad-scan
+│           ├── generate-sdd.md        # /legacy-squad-generate-sdd
+│           ├── generate-mmp.md        # /legacy-squad-generate-mmp
+│           ├── generate-specs.md      # /legacy-squad-generate-specs
+│           └── scan.md                # /legacy-squad-scan
 └── AGENTS.md                          # Compatibilidade Codex
 ```
 
@@ -217,7 +233,25 @@ Sintetiza todos os assessments em um plano incremental com fases, rollback, Depl
 
 ### PRS Generator (`/legacy-squad-generate-prs`)
 
-Consolida todos os assessments no PRS (Product Refactor Specification) — o documento final para decision makers.
+Consolida todos os assessments no PRS (Product Refactor Specification) — o relatório de diagnóstico para decision makers.
+
+### SDD Generator (`/legacy-squad-generate-sdd`)
+
+Produz o Software Design Document com arquitetura atual e alvo (diagramas Mermaid C4), inventário de componentes, integrações, cross-cutting concerns (segurança, observabilidade, tratamento de erros, configuração), restrições e Architecture Decision Records (ADRs) com alternativas avaliadas.
+
+**Referências:** C4 Model, arc42, ADR, Clean Architecture
+
+### MMP Generator (`/legacy-squad-generate-mmp`)
+
+Produz o Modernization Master Plan com roadmap em fases (Foundation → Core → Evolution, com fase Emergency opcional quando há achados críticos), plano de upgrade de stack, matriz de risco, estratégia de rollback por fase, Execution Readiness Score (0-100) justificado dimensão por dimensão, Deployability Score por fase e métricas de sucesso em segurança, qualidade de código, cobertura de testes e arquitetura.
+
+**Referências:** Strangler Fig, Branch by Abstraction, Progressive Delivery
+
+### Execution Specs Generator (`/legacy-squad-generate-specs`)
+
+Decompõe o MMP em Execution Specs atômicas — um arquivo YAML por unidade de trabalho, cada uma individualmente deployável, com critérios de aceite binários, estratégia de rollback obrigatória, rastreabilidade de evidências (IDs de findings do compliance + referências aos assessments), grafo de dependências entre specs e flag explícita `human_approval_required` para mudanças de alto risco.
+
+**Referências:** FRAMEWORK_SPECIFICATION Section 8 (schema da Execution Spec)
 
 ---
 
@@ -242,16 +276,22 @@ TypeScript, JavaScript, PHP, C#, Java, Python, Dart
 
 O scanner roda automaticamente regras determinísticas baseadas em OWASP e CWE:
 
-| Regra | Detecta | Referência |
-|-------|---------|------------|
-| SEC-CRED-001 | Credenciais hardcoded | OWASP MASVS, CWE-798 |
-| SEC-CRED-002 | Keystores/certificados no repositório | OWASP MASVS, CWE-312 |
-| SEC-LOG-001 | Console.log ativo em produção | CWE-532 |
-| SEC-LOG-002 | PII (CPF, SSN, IDs) em logs/serviços externos | CWE-532, LGPD/GDPR |
-| SEC-ERR-001 | Catch blocks vazios | CWE-390 |
-| SEC-STORE-001 | Token em AsyncStorage | OWASP MASVS |
-| CQ-MIX-001 | JS e TS misturados | Clean Code |
-| CQ-DEP-001 | Dependências transitivas | Clean Code |
+| Regra | Detecta | Stacks | Referência |
+|-------|---------|--------|------------|
+| SEC-CRED-001 | Credenciais hardcoded (senhas, API keys, tokens) | todas | OWASP MASVS, CWE-798 |
+| SEC-CRED-002 | Keystores/certificados commitados no repositório | mobile, todas | OWASP MASVS, CWE-312 |
+| SEC-SQL-001 | SQL injection (concatenação de string em queries) | PHP, .NET, Java, Node | OWASP A03, CWE-89 |
+| SEC-CRYPTO-001 | Criptografia fraca (MD5, SHA1) | PHP, .NET, Java, Node | OWASP A02, CWE-327 |
+| SEC-DESER-001 | Desserialização insegura (BinaryFormatter, `unserialize`, `readObject`) | .NET, PHP, Java | OWASP A08, CWE-502 |
+| SEC-CMD-001 | Command injection (`exec`, `Runtime.exec`, `shell_exec` com input do usuário) | PHP, .NET, Java, Node | OWASP A03, CWE-78 |
+| SEC-PATH-001 | Path traversal (paths de arquivo sem validação) | PHP, .NET, Java, Node | OWASP A01, CWE-22 |
+| SEC-XSS-001 | XSS via output sem escape (`echo $_GET`, `Html.Raw`) | PHP, .NET | OWASP A03, CWE-79 |
+| SEC-LOG-001 | `console.log` ativo em produção | JS/TS, mobile | CWE-532 |
+| SEC-LOG-002 | PII (CPF, SSN, IDs) em logs/serviços externos | todas | CWE-532, LGPD/GDPR |
+| SEC-ERR-001 | Catch blocks vazios | todas | CWE-390 |
+| SEC-STORE-001 | Token em AsyncStorage (storage inseguro) | mobile | OWASP MASVS |
+| CQ-MIX-001 | JS e TS misturados (migração TS incompleta) | JS/TS | Clean Code |
+| CQ-DEPRECATED-001 | APIs deprecadas (`mysql_*`, `ereg`, `Vector`) | PHP, Java | CVE-classified |
 
 Todo achado inclui: evidência (arquivo, linha, snippet), impacto, referência técnica e recomendação.
 
@@ -394,7 +434,7 @@ legacy-squad/
 ### Testes
 
 ```bash
-npx vitest run          # 28 testes (domínio, scanner, compliance, agentes)
+npx vitest run          # 93 testes (domínio, scanner, compliance, agentes, installer)
 npx vitest --watch      # Watch mode
 ```
 
