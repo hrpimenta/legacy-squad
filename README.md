@@ -285,9 +285,14 @@ The framework was validated against a **production mobile app** (~18k lines of c
 - Session recording capturing sensitive data without user consent
 - 63 business rules extracted from code (11 implicit, never documented)
 - Potential bug in a date calculation affecting core business logic
-- 36-week modernization roadmap with scores: Deployability 3→9/10, Readiness 22→87/100
 
-**Total:** 50 findings across 5 pillars, from a single `npx legacy-squad install` + 6 agent activations.
+**Generated artifacts (4 official deliverables of V1):**
+- **PRS** — Product Refactor Specification consolidating the diagnostic
+- **SDD** — Software Design Document with current/target architecture and 8 ADRs
+- **MMP** — Modernization Master Plan with 4-phase roadmap (Emergency → Foundation → Core → Evolution), Execution Readiness Score 38→88/100, Deployability scores per phase, and concrete rollback strategies
+- **37 Execution Specs** — atomic, individually deployable units of work with binary acceptance criteria, mandatory rollback, evidence traceability, and dependency graph
+
+**Total:** 50 findings + 4 consolidated artifacts + 37 executable specs from a single `npx legacy-squad install` followed by 9 slash command activations.
 
 ---
 
@@ -297,10 +302,12 @@ The framework was validated against a **production mobile app** (~18k lines of c
 
 Focus: **Understand + Plan**
 
-- Scanner, Compliance Engine, Context Manager
-- 7 agents as slash commands
-- PRS, assessments, modernization plan
-- Claude Code, Codex, Cursor support
+- Scanner with multi-stack detection (PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, Node, React Native/Expo)
+- Compliance Engine with 14 deterministic rules (OWASP MASVS, ASVS, CWE Top 25)
+- Context Manager (basic)
+- **5 analysis agents** as slash commands: security, architecture, legacy-code, business-rules, modernization
+- **4 artifact generators** as slash commands: PRS, SDD, MMP, Execution Specs
+- Claude Code, Codex CLI support (Cursor / Gemini CLI on the roadmap)
 
 ### Enterprise Edition (V2) — In development
 
@@ -317,14 +324,30 @@ Focus: **Modernize**
 
 ## Roadmap
 
-- [x] Sprint 1 — Scanner + Compliance Engine
-- [x] Sprint 2 — Install command + IDE integration
-- [x] Sprint 3 — Context Manager (basic)
-- [x] Sprint 4 — End-to-end validation with real project
-- [ ] Sprint 5 — Multi-IDE (Cursor, Gemini CLI)
-- [ ] Sprint 6 — Rules for PHP, .NET, Java
-- [ ] Sprint 7 — SDD + MMP agents
-- [ ] Sprint 8 — Execution Specs agent + npm publish
+### V1 — Discovery Platform (Community Edition) ✅
+
+- [x] Scanner + Compliance Engine
+- [x] Install command + IDE integration
+- [x] Context Manager (basic)
+- [x] End-to-end validation with real project (mobile, ~18k LoC)
+- [x] Multi-stack rule catalog (PHP, .NET, Java, Node, mobile)
+- [x] Language-agnostic agent templates (stack-aware analysis)
+- [x] 4 official artifacts (PRS, SDD, MMP, Execution Specs)
+
+### V1 — Continuous improvements
+
+- [ ] Cursor + Gemini CLI support
+- [ ] Framework-specific rule packs (Eloquent raw queries, EF Core, Hibernate HQL)
+- [ ] AST-based scanner (current is regex-based)
+
+### V2 — Execution Platform (Enterprise Edition) — In development
+
+- [ ] Execution Engine (AI-assisted refactoring from Execution Specs)
+- [ ] Pull Request Engine
+- [ ] QA Gates
+- [ ] CI/CD Integration
+- [ ] Custom Rule Packs
+- [ ] Dashboard + Team Collaboration
 
 ---
 

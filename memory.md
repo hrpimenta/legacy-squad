@@ -99,3 +99,15 @@
 ### DT-008: Templates de agentes language-agnostic  ✅ RESOLVIDO 2026-06-09
 **Framework:** TAS Section 16 — Agentes
 **Resolução:** 6 templates de slash command reescritos com seção `## Stack-aware analysis` cobrindo PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, React Native/mobile, Node backend. Coberto por 7 testes (multi-stack coverage + bias-check + invariantes de structure). Ver DA-009.
+
+### DT-009: Custo de contexto dos geradores consolidados (PRS/SDD/MMP/Specs)
+**Framework:** PRD §15 (Riscos técnicos — excesso de contexto)
+**Contexto:** Durante a validação ponta-a-ponta da beta.8 num projeto real (~25k LoC, fan-out de 253 arquivos), rodar os 4 geradores em sequência consumiu contexto suficiente para forçar 2 compactações de conversa no Claude Code (Opus médio). Causa: cada gerador lê repo-index + findings + N assessments anteriores; MMP lê SDD; Specs lê MMP. Em projetos grandes o context window vira gargalo.
+**Risco:** Médio — não bloqueia uso, mas degrada UX em projetos > 20k LoC ou aumenta custo de chamada de IA.
+**Mitigações futuras possíveis:** (a) Templates pedirem output mais conciso por padrão com modo "expansive" opcional via flag; (b) `generate-specs` particionar por pilar (1 chamada por pilar em vez de uma única chamada gerando 37 specs); (c) Context Manager descrito em DA-006 amadurecer para gerar summaries dos assessments antes de alimentar os geradores; (d) Documentar no README a recomendação de rodar geradores em sessões separadas do IDE para projetos grandes.
+**Prazo sugerido:** 1.1.x — não bloqueia 1.0.0. Documentar no README como limitação conhecida; tratar como otimização posterior.
+
+## Marcos
+
+### [2026-06-10] 1.0.0 — Saída do beta e primeiro release estável
+**Status:** Promovido após validação ponta-a-ponta em projeto real de produção (RN/Expo, ~25k LoC), gerando os 4 artefatos oficiais (PRS, SDD, MMP, 37 Execution Specs) com qualidade adequada para execução. 93 testes verdes, 10 templates de slash command, catálogo de 14 regras multi-stack. V1 do framework agora completo conforme `FRAMEWORK_SPECIFICATION_ENTERPRISE_V1.md`. Saídas registradas em DA-006 a DA-010. Débitos remanescentes: DT-001 (AST), DT-002 (parcial), DT-006 (Cursor/Gemini), DT-007 (framework-specific rules), DT-009 (custo de contexto).
