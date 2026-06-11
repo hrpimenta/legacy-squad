@@ -285,9 +285,14 @@ O framework foi validado contra um **app mobile em produção** (~18k linhas de 
 - Gravação de sessão capturando dados sensíveis sem consentimento
 - 63 regras de negócio extraídas do código (11 implícitas, nunca documentadas)
 - Bug potencial em cálculo de datas afetando lógica de negócio central
-- Roadmap de modernização de 36 semanas com scores: Deployability 3→9/10, Readiness 22→87/100
 
-**Total:** 50 achados em 5 pilares, a partir de um único `npx legacy-squad install` + 6 ativações de agente.
+**Artefatos gerados (4 entregáveis oficiais do V1):**
+- **PRS** — Product Refactor Specification consolidando o diagnóstico
+- **SDD** — Software Design Document com arquitetura atual/alvo e 8 ADRs
+- **MMP** — Modernization Master Plan com roadmap em 4 fases (Emergência → Foundation → Core → Evolution), Execution Readiness Score 38→88/100, scores de deployability por fase e estratégias concretas de rollback
+- **37 Execution Specs** — unidades de trabalho atômicas, individualmente deployáveis, com critérios de aceite binários, rollback obrigatório, rastreabilidade de evidências e grafo de dependências
+
+**Total:** 50 achados + 4 artefatos consolidados + 37 specs executáveis a partir de um único `npx legacy-squad install` seguido de 9 ativações de slash command.
 
 ---
 
@@ -297,10 +302,12 @@ O framework foi validado contra um **app mobile em produção** (~18k linhas de 
 
 Foco: **Entender + Planejar**
 
-- Scanner, Compliance Engine, Context Manager
-- 7 agentes como slash commands
-- PRS, assessments, plano de modernização
-- Suporte a Claude Code, Codex, Cursor
+- Scanner com detecção multi-stack (PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, Node, React Native/Expo)
+- Compliance Engine com 14 regras determinísticas (OWASP MASVS, ASVS, CWE Top 25)
+- Context Manager (básico)
+- **5 agentes de análise** como slash commands: security, architecture, legacy-code, business-rules, modernization
+- **4 geradores de artefato** como slash commands: PRS, SDD, MMP, Execution Specs
+- Suporte a Claude Code, Codex CLI (Cursor / Gemini CLI no roadmap)
 
 ### Enterprise Edition (V2) — Em desenvolvimento
 
@@ -317,14 +324,30 @@ Foco: **Modernizar**
 
 ## Roadmap
 
-- [x] Sprint 1 — Scanner + Compliance Engine
-- [x] Sprint 2 — Comando install + integração com IDE
-- [x] Sprint 3 — Context Manager (básico)
-- [x] Sprint 4 — Validação end-to-end com projeto real
-- [ ] Sprint 5 — Multi-IDE (Cursor, Gemini CLI)
-- [ ] Sprint 6 — Regras para PHP, .NET, Java
-- [ ] Sprint 7 — Agentes SDD + MMP
-- [ ] Sprint 8 — Agente Execution Specs + npm publish
+### V1 — Discovery Platform (Community Edition) ✅
+
+- [x] Scanner + Compliance Engine
+- [x] Comando install + integração com IDE
+- [x] Context Manager (básico)
+- [x] Validação end-to-end com projeto real (mobile, ~18k LoC)
+- [x] Catálogo de regras multi-stack (PHP, .NET, Java, Node, mobile)
+- [x] Templates de agentes language-agnostic (stack-aware analysis)
+- [x] 4 artefatos oficiais (PRS, SDD, MMP, Execution Specs)
+
+### V1 — Melhorias contínuas
+
+- [ ] Suporte a Cursor + Gemini CLI
+- [ ] Pacotes de regras framework-specific (Eloquent raw queries, EF Core, Hibernate HQL)
+- [ ] Scanner baseado em AST (atual é regex)
+
+### V2 — Execution Platform (Enterprise Edition) — Em desenvolvimento
+
+- [ ] Execution Engine (refatoração assistida por IA a partir das Execution Specs)
+- [ ] Pull Request Engine
+- [ ] QA Gates
+- [ ] Integração CI/CD
+- [ ] Custom Rule Packs
+- [ ] Dashboard + Colaboração em Equipe
 
 ---
 
