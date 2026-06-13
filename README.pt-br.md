@@ -7,104 +7,178 @@
   </p>
 </p>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/legacy-squad"><img src="https://img.shields.io/npm/v/legacy-squad?color=cb3837&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/legacy-squad"><img src="https://img.shields.io/npm/dm/legacy-squad?color=blue" alt="downloads"></a>
+  <a href="https://github.com/hrpimenta/legacy-squad/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="license"></a>
+  <a href="https://github.com/hrpimenta/legacy-squad/stargazers"><img src="https://img.shields.io/github/stars/hrpimenta/legacy-squad?style=social" alt="stars"></a>
+  <img src="https://img.shields.io/badge/status-beta-orange" alt="beta">
+  <img src="https://img.shields.io/badge/node-%E2%89%A518-brightgreen" alt="node">
+</p>
+
 ---
 
-Legacy Squad é um framework open-source que se instala dentro do seu projeto legado com um único comando, analisa automaticamente o código-fonte e disponibiliza agentes de IA especializados na sua IDE para produzir um diagnóstico completo — sem alterar uma linha de código.
+> **Um comando. Cinco agentes de IA na sua IDE.**  
+> **50 achados, 4 documentos de engenharia e 37 execution specs** — sem alterar uma única linha do seu código.
 
 ```bash
 npx legacy-squad install
 ```
 
----
+<p align="center">
+  <img src="docs/assets/demo.svg" alt="Saída do install do Legacy Squad" width="780">
+</p>
 
-## O Problema
-
-Sistemas legados sustentam processos críticos, mas frequentemente apresentam:
-
-- Documentação inexistente ou desatualizada
-- Credenciais hardcoded em código-fonte
-- Regras de negócio escondidas em condicionais que ninguém documentou
-- Acoplamento que torna qualquer mudança arriscada
-- Medo de alterar código em produção
-- Dependência de 1-2 desenvolvedores que "conhecem o sistema"
-
-Abordagens tradicionais (reescrita total, refatoração sem governança) são caras, lentas e arriscadas.
-
-## A Solução
-
-Legacy Squad combina **análise determinística** (scanner + compliance engine com regras OWASP/CWE) com **agentes de IA especializados** que rodam na sua IDE (Claude Code, Codex, Cursor) para produzir:
-
-| Artefato | O que faz |
-|----------|-----------|
-| **Repo Index** | Inventário completo: stack, módulos, dependências, integrações, hotspots |
-| **Findings** | Achados de segurança com evidência, impacto, referência OWASP e recomendação |
-| **Security Assessment** | Análise profunda de autenticação, secrets, LGPD/GDPR, API security |
-| **Architecture Assessment** | Mapeamento C4, acoplamento, riscos estruturais, arquitetura alvo |
-| **Legacy Code Assessment** | Hotspots, migração JS→TS, duplicação, cobertura de testes |
-| **Business Rules Assessment** | 60+ regras extraídas do código, preservation checklist |
-| **Modernization Assessment** | Roadmap incremental em fases com rollback e scores |
-| **PRS** | Product Refactor Specification — relatório consolidado de diagnóstico |
-| **SDD** | Software Design Document — arquitetura atual/alvo com ADRs |
-| **MMP** | Modernization Master Plan — roadmap em fases com scores de Execution Readiness e Deployability |
-| **Execution Specs** | Unidades de trabalho atômicas, individualmente deployáveis, com critérios de aceite binários e rollback |
+<p align="center">
+  🔑 <strong>Zero API keys</strong> &nbsp;·&nbsp;
+  ☁️ <strong>Zero servidores externos</strong> &nbsp;·&nbsp;
+  💻 <strong>Roda na sua própria IDE</strong> (Claude Code, Codex, Cursor)
+</p>
 
 ---
 
-## Quick Start
+## 📊 Validado em Produção
+
+Aplicativo mobile real em produção — **~18.000 LoC**, **98 dependências**, transações financeiras reais:
+
+| | |
+|---|---|
+| 🔍 **50 achados** (7 determinísticos + 43 dos agentes de IA) | 📐 **63 regras de negócio** extraídas do código (11 implícitas) |
+| 📄 **4 documentos oficiais** (PRS · SDD · MMP · Specs) | 🎯 **37 execution specs**, atômicas e deployáveis |
+| 📈 **Execution Readiness:** 38 → 88 / 100 | 🚀 **Deployability:** pontuado por fase |
+
+A partir de um único `npx legacy-squad install` seguido por 9 slash commands na IDE.
+
+[**→ Leia o case study completo**](docs/CASE_STUDY.md)
+
+---
+
+## 🚀 Início Rápido
+
+> Do zero ao seu primeiro achado gerado por IA em minutos.
 
 ### Pré-requisitos
 
-- Node.js ≥ 18
-- Uma IDE com IA: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex) ou [Cursor](https://cursor.sh)
+- **Node.js ≥ 18**
+- **Uma IDE com IA habilitada:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex) ou [Cursor](https://cursor.sh)
 
-### Instalação
+### 1. Instale no seu projeto legado
 
 ```bash
 cd seu-projeto-legado
 npx legacy-squad install
 ```
 
-O comando:
-1. Detecta a stack (React Native, PHP, .NET, Java, Node — por manifesto)
-2. Escaneia o repositório e gera o inventário
-3. Roda o Compliance Engine (regras OWASP/CWE)
-4. Gera Context Packs por módulo
-5. Instala agentes como slash commands na IDE
-6. Verifica a instalação (8 checks)
+Logo em seguida, você verá os artefatos do framework em `.legacy-squad/memory/`:
 
-### Uso com Claude Code
+- `repo-index.json` — inventário completo (stack, módulos, dependências, integrações)
+- `findings.json` — achados de segurança determinísticos (OWASP / CWE)
+- `context-packs.json` — contexto por módulo, preparado para os agentes de IA
+
+<details>
+<summary><strong>O que o comando install faz internamente</strong></summary>
+
+1. Detecta a stack pelo manifesto (`package.json`, `composer.json`, `.csproj`, `pom.xml`)
+2. Faz o scan do repositório e monta o inventário
+3. Executa o Compliance Engine com regras OWASP / CWE
+4. Gera Context Packs por módulo (eficientes em tokens)
+5. Instala os 9 agentes como slash commands na sua IDE
+6. Verifica a instalação (8 health checks)
+
+</details>
+
+### 2. Rode seu primeiro agente de IA
+
+Abra sua IDE no projeto e acione o Security Agent.
+
+**Claude Code**
+```bash
+claude
+/legacy-squad-security
+```
+
+**Codex CLI**
+```bash
+codex
+@legacy-squad-security
+```
+
+O assessment é escrito em:
+
+```
+.legacy-squad/outputs/assessments/security.md
+```
+
+Orientado por evidência: todo achado inclui referência arquivo:linha, mapeamento OWASP / CWE, impacto e recomendação — gerado pela IA rodando inteiramente dentro da sua IDE.
+
+### 3. Rode o diagnóstico completo
+
+Depois de validar o primeiro agente, execute os quatro restantes e os quatro geradores de artefatos.
+
+<details>
+<summary><strong>Workflow completo — 5 agentes + 4 geradores</strong></summary>
+
+**Etapa 1 — Análise (rode em ordem)**
 
 ```bash
-claude                              # Abre Claude Code no projeto
-
-# Passo 1 — Análise (5 agentes, rodar em ordem)
 /legacy-squad-security              # Security Agent
 /legacy-squad-architecture          # Architecture Agent
 /legacy-squad-legacy-code           # Legacy Code Agent
 /legacy-squad-business-rules        # Business Rules Agent
 /legacy-squad-modernization         # Modernization Agent
+```
 
-# Passo 2 — Artefatos consolidados (4 geradores, rodar após a análise)
+**Etapa 2 — Artefatos consolidados (rode após a análise)**
+
+```bash
 /legacy-squad-generate-prs          # Product Refactor Specification
 /legacy-squad-generate-sdd          # Software Design Document
 /legacy-squad-generate-mmp          # Modernization Master Plan
 /legacy-squad-generate-specs        # Execution Specs (um YAML por unidade de trabalho)
 ```
 
-### Uso com Codex CLI
+</details>
 
-```bash
-codex                               # Abre Codex no projeto
-# O AGENTS.md na raiz define os agentes disponíveis
-@legacy-squad-security              # Ativa o Security Agent
-```
-
-### Outros Comandos
+### Outros comandos
 
 ```bash
 npx legacy-squad scan               # Re-escaneia sem reinstalar agentes
-npx legacy-squad doctor             # Verifica saúde da instalação
+npx legacy-squad doctor             # Verifica a saúde da instalação
 ```
+
+---
+
+## Por que Legacy Squad
+
+A maioria das ferramentas existentes cobre uma única dimensão da modernização de legados. O Legacy Squad cobre o ciclo completo — do inventário ao plano executável — e trata agentes de IA como **contribuidores submetidos a uma metodologia**, não como chat livre.
+
+| Capacidade | Static Analyzers<br>(SonarQube) | SAST / SCA<br>(Snyk, Checkmarx) | AI Coding Assistants<br>(Copilot, Cursor) | **Legacy Squad** |
+|---|:---:|:---:|:---:|:---:|
+| Regras de segurança determinísticas (OWASP / CWE) | ✅ | ✅ | — | ✅ |
+| Vulnerabilidades de CVE / dependências | — | ✅ | — | — |
+| Code smells e complexidade cognitiva | ✅ | parcial | — | ✅ |
+| Mapeamento de arquitetura (C4, acoplamento) | — | — | — | ✅ |
+| Extração de regras de negócio do código | — | — | — | ✅ |
+| Plano de modernização em fases (MMP) | — | — | — | ✅ |
+| Execution specs atômicas e deployáveis | — | — | — | ✅ |
+| Agentes de IA com saída orientada por evidência | — | — | livre | ✅ |
+| Roda na sua própria IDE (sem servidor, sem API key) | — | — | ✅ | ✅ |
+| Repositório nunca é enviado por completo para a LLM | n/a | n/a | — | ✅ |
+
+Em uma frase: o Legacy Squad combina **escaneamento determinístico** com **agentes de IA submetidos a metodologia** que produzem **artefatos de engenharia estruturados** (PRS, SDD, MMP, Execution Specs) — não histórico de chat.
+
+### Quando o Legacy Squad faz sentido
+
+- Você tem um sistema legado em produção e precisa de um **diagnóstico estruturado** antes de decidir o que modernizar.
+- Você quer que todo achado carregue **evidência, referência ao framework, impacto e recomendação** — não sugestões sem justificativa.
+- Você precisa de um **plano de modernização em fases**, reversível, deployável e passível de aprovação humana antes da execução.
+- Você quer assistência de IA **sem enviar seu código-fonte para um servidor externo** nem pagar por mais uma seat.
+
+### Quando não faz
+
+- Para escaneamento puro de CVE / vulnerabilidades de dependência, use [Snyk](https://snyk.io), [Dependabot](https://github.com/dependabot) ou equivalentes — eles são especializados nisso e o Legacy Squad não os substitui.
+- Para gates de qualidade contínuos em CI/CD, use [SonarQube](https://www.sonarsource.com/products/sonarqube/) — o Legacy Squad é um framework de **diagnóstico e planejamento**, não um monitor contínuo de qualidade.
+- Para autocomplete no editor ou chat genérico de código, [GitHub Copilot](https://github.com/features/copilot) e [Cursor](https://cursor.sh) já cumprem esse papel — o Legacy Squad começa onde essas ferramentas param.
 
 ---
 
@@ -121,7 +195,7 @@ npx legacy-squad doctor             # Verifica saúde da instalação
         ┌──────────┐  ┌────────────┐  ┌────────────┐
         │ Scanner  │  │ Compliance │  │  Context   │
         │ (stack,  │  │  Engine    │  │  Manager   │
-        │ módulos) │  │ (OWASP)   │  │ (packs)    │
+        │ módulos) │  │ (OWASP)    │  │  (packs)   │
         └────┬─────┘  └─────┬──────┘  └─────┬──────┘
              │               │               │
              ▼               ▼               ▼
@@ -154,13 +228,13 @@ npx legacy-squad doctor             # Verifica saúde da instalação
                     └─────────────┘
 ```
 
-**O framework prepara os dados e instala os agentes. A IA é executada pela IDE do dev.**
+**O framework prepara os dados e instala os agentes. A IA roda na IDE do dev.**
 
-Zero API key necessária. Zero chamada a servidor externo. Tudo local.
+Zero API keys necessárias. Zero chamadas a servidores externos. Tudo roda localmente.
 
 ---
 
-## Estrutura Instalada no Projeto
+## Estrutura Instalada
 
 Após `npx legacy-squad install`:
 
@@ -174,7 +248,7 @@ seu-projeto/
 │   │   ├── findings.json              # Achados do compliance engine
 │   │   └── context-packs.json         # Contexto por módulo
 │   ├── outputs/
-│   │   ├── assessments/               # Assessments dos agentes (5 .md)
+│   │   ├── assessments/               # Assessments dos agentes (5 arquivos .md)
 │   │   ├── reports/                   # PRS.md + PRS.json
 │   │   ├── sdd/                       # SDD.md + SDD.json
 │   │   ├── mmp/                       # MMP.md + MMP.json
@@ -203,25 +277,25 @@ seu-projeto/
 
 ### Security Agent (`/legacy-squad-security`)
 
-Analisa autenticação, secrets, armazenamento inseguro, exposição de PII e conformidade com leis de privacidade (LGPD, GDPR).
+Analisa autenticação, secrets, armazenamento inseguro, exposição de PII e conformidade de privacidade (LGPD, GDPR).
 
 **Referências:** OWASP MASVS V2, OWASP ASVS, CWE Top 25, LGPD, GDPR, NIST SSDF
 
 ### Architecture Agent (`/legacy-squad-architecture`)
 
-Mapeia arquitetura atual com diagramas C4, identifica acoplamento, riscos estruturais e propõe arquitetura alvo incremental.
+Mapeia a arquitetura atual com diagramas C4, identifica acoplamento, riscos estruturais e propõe uma arquitetura alvo incremental.
 
 **Referências:** C4 Model, Clean Architecture, arc42, ADR
 
 ### Legacy Code Agent (`/legacy-squad-legacy-code`)
 
-Identifica hotspots, duplicação, progresso de migração JS→TS, cobertura de testes e prioridades de refatoração.
+Identifica hotspots, duplicação, progresso da migração JS→TS, cobertura de testes e prioridades de refatoração.
 
 **Referências:** Clean Code, Sonar Rules, Cognitive Complexity
 
 ### Business Rules Agent (`/legacy-squad-business-rules`)
 
-Extrai regras de negócio escondidas no código — validações, permissões, fluxos, magic numbers, regras implícitas em catch blocks.
+Extrai regras de negócio escondidas no código — validações, permissões, fluxos, números mágicos, regras implícitas em catch blocks.
 
 **Referências:** DDD, Event Storming
 
@@ -233,25 +307,25 @@ Sintetiza todos os assessments em um plano incremental com fases, rollback, Depl
 
 ### PRS Generator (`/legacy-squad-generate-prs`)
 
-Consolida todos os assessments no PRS (Product Refactor Specification) — o relatório de diagnóstico para decision makers.
+Consolida todos os assessments no PRS (Product Refactor Specification) — o relatório de diagnóstico para tomadores de decisão.
 
 ### SDD Generator (`/legacy-squad-generate-sdd`)
 
-Produz o Software Design Document com arquitetura atual e alvo (diagramas Mermaid C4), inventário de componentes, integrações, cross-cutting concerns (segurança, observabilidade, tratamento de erros, configuração), restrições e Architecture Decision Records (ADRs) com alternativas avaliadas.
+Produz o Software Design Document com arquitetura atual e alvo (diagramas Mermaid C4), inventário de componentes, integrações, preocupações transversais (segurança, observabilidade, tratamento de erros, configuração), restrições e Architecture Decision Records (ADRs) com alternativas consideradas.
 
 **Referências:** C4 Model, arc42, ADR, Clean Architecture
 
 ### MMP Generator (`/legacy-squad-generate-mmp`)
 
-Produz o Modernization Master Plan com roadmap em fases (Foundation → Core → Evolution, com fase Emergency opcional quando há achados críticos), plano de upgrade de stack, matriz de risco, estratégia de rollback por fase, Execution Readiness Score (0-100) justificado dimensão por dimensão, Deployability Score por fase e métricas de sucesso em segurança, qualidade de código, cobertura de testes e arquitetura.
+Produz o Modernization Master Plan com roadmap em fases (Foundation → Core → Evolution, com fase Emergency opcional quando há achados críticos), plano de upgrade de stack, matriz de risco, estratégia de rollback por fase, Execution Readiness Score (0-100) justificado dimensão por dimensão, Deployability Score por fase e métricas de sucesso cobrindo segurança, qualidade de código, cobertura de testes e arquitetura.
 
 **Referências:** Strangler Fig, Branch by Abstraction, Progressive Delivery
 
 ### Execution Specs Generator (`/legacy-squad-generate-specs`)
 
-Decompõe o MMP em Execution Specs atômicas — um arquivo YAML por unidade de trabalho, cada uma individualmente deployável, com critérios de aceite binários, estratégia de rollback obrigatória, rastreabilidade de evidências (IDs de findings do compliance + referências aos assessments), grafo de dependências entre specs e flag explícita `human_approval_required` para mudanças de alto risco.
+Decompõe o MMP em Execution Specs atômicas — um arquivo YAML por unidade de trabalho, individualmente deployável, com critérios de aceite binários, estratégia de rollback obrigatória, rastreabilidade de evidência (IDs de findings de compliance + referências de assessment), grafo de dependência entre specs e flag explícita `human_approval_required` para mudanças de alto risco.
 
-**Referências:** FRAMEWORK_SPECIFICATION Section 8 (schema da Execution Spec)
+**Referências:** FRAMEWORK_SPECIFICATION Seção 8 (schema de Execution Spec)
 
 ---
 
@@ -260,7 +334,7 @@ Decompõe o MMP em Execution Specs atômicas — um arquivo YAML por unidade de 
 ### Detecção por Manifesto (Camada 1 — determinística)
 
 | Manifesto | Stack |
-|-----------|-------|
+|----------|-------|
 | `package.json` | Node.js, React, React Native, Expo, Next.js |
 | `composer.json` | PHP, Laravel |
 | `.csproj` | C#, .NET |
@@ -277,21 +351,21 @@ TypeScript, JavaScript, PHP, C#, Java, Python, Dart
 O scanner roda automaticamente regras determinísticas baseadas em OWASP e CWE:
 
 | Regra | Detecta | Stacks | Referência |
-|-------|---------|--------|------------|
+|------|---------|--------|-----------|
 | SEC-CRED-001 | Credenciais hardcoded (senhas, API keys, tokens) | todas | OWASP MASVS, CWE-798 |
 | SEC-CRED-002 | Keystores/certificados commitados no repositório | mobile, todas | OWASP MASVS, CWE-312 |
 | SEC-SQL-001 | SQL injection (concatenação de string em queries) | PHP, .NET, Java, Node | OWASP A03, CWE-89 |
 | SEC-CRYPTO-001 | Criptografia fraca (MD5, SHA1) | PHP, .NET, Java, Node | OWASP A02, CWE-327 |
 | SEC-DESER-001 | Desserialização insegura (BinaryFormatter, `unserialize`, `readObject`) | .NET, PHP, Java | OWASP A08, CWE-502 |
 | SEC-CMD-001 | Command injection (`exec`, `Runtime.exec`, `shell_exec` com input do usuário) | PHP, .NET, Java, Node | OWASP A03, CWE-78 |
-| SEC-PATH-001 | Path traversal (paths de arquivo sem validação) | PHP, .NET, Java, Node | OWASP A01, CWE-22 |
-| SEC-XSS-001 | XSS via output sem escape (`echo $_GET`, `Html.Raw`) | PHP, .NET | OWASP A03, CWE-79 |
+| SEC-PATH-001 | Path traversal (caminhos de arquivo não validados) | PHP, .NET, Java, Node | OWASP A01, CWE-22 |
+| SEC-XSS-001 | XSS por saída sem escape (`echo $_GET`, `Html.Raw`) | PHP, .NET | OWASP A03, CWE-79 |
 | SEC-LOG-001 | `console.log` ativo em produção | JS/TS, mobile | CWE-532 |
 | SEC-LOG-002 | PII (CPF, SSN, IDs) em logs/serviços externos | todas | CWE-532, LGPD/GDPR |
 | SEC-ERR-001 | Catch blocks vazios | todas | CWE-390 |
-| SEC-STORE-001 | Token em AsyncStorage (storage inseguro) | mobile | OWASP MASVS |
-| CQ-MIX-001 | JS e TS misturados (migração TS incompleta) | JS/TS | Clean Code |
-| CQ-DEPRECATED-001 | APIs deprecadas (`mysql_*`, `ereg`, `Vector`) | PHP, Java | CVE-classified |
+| SEC-STORE-001 | Token em AsyncStorage (armazenamento inseguro) | mobile | OWASP MASVS |
+| CQ-MIX-001 | Arquivos JS e TS misturados (migração TS incompleta) | JS/TS | Clean Code |
+| CQ-DEPRECATED-001 | APIs depreciadas (`mysql_*`, `ereg`, `Vector`) | PHP, Java | classificadas por CVE |
 
 Todo achado inclui: evidência (arquivo, linha, snippet), impacto, referência técnica e recomendação.
 
@@ -300,14 +374,14 @@ Todo achado inclui: evidência (arquivo, linha, snippet), impacto, referência t
 ## Princípios
 
 | Princípio | Descrição |
-|-----------|-----------|
-| **Install-First** | Um comando instala tudo no projeto. Sem configuração manual. |
+|-----------|-------------|
+| **Install-First** | Um comando instala tudo. Sem setup manual. |
 | **IDE-Native** | Agentes são slash commands da IDE. A IA vem do ambiente do dev. |
 | **Evidence-Driven** | Todo achado tem evidência concreta (arquivo, linha, snippet). |
-| **Context-First** | Nenhum LLM recebe o repositório inteiro — apenas context packs. |
-| **Read-Only** | O framework não altera código. Apenas lê e gera relatórios. |
+| **Context-First** | Nenhuma LLM recebe o repositório inteiro — apenas context packs. |
+| **Read-Only** | O framework não modifica código. Apenas lê e gera relatórios. |
 | **Production-First** | Toda recomendação assume que o sistema está em produção. |
-| **Incremental** | Toda modernização é incremental, reversível e deployável. |
+| **Incremental** | Todo passo de modernização é incremental, reversível e deployável. |
 
 ---
 
@@ -315,24 +389,24 @@ Todo achado inclui: evidência (arquivo, linha, snippet), impacto, referência t
 
 O framework foi validado contra um **app mobile em produção** (~18k linhas de código, 98 dependências, transações financeiras reais):
 
-**Compliance Engine (determinístico):** 7 achados por pattern matching
+**Compliance Engine (determinístico):** 7 achados via pattern matching
 
-**Agentes (IA via Claude Code):** +43 achados adicionais, incluindo:
-- Credenciais de service account decodificadas de Base64 no código-fonte
-- Flag de configuração remota capaz de bypassar toda a autenticação em produção
-- Senhas de usuário gravadas em texto plano em banco de dados cloud
-- PII usada como chave primária em banco cloud (enumerável)
-- Gravação de sessão capturando dados sensíveis sem consentimento
+**Agentes de IA (via Claude Code):** +43 achados adicionais, incluindo:
+- Credenciais de service account decodificadas a partir de Base64 no código-fonte
+- Flag de remote config capaz de bypassar toda a autenticação em produção
+- Senhas de usuário logadas em texto claro em um banco de dados na nuvem
+- PII usado como chave primária em banco de dados na nuvem (enumerável)
+- Gravação de sessão capturando dados sensíveis sem consentimento do usuário
 - 63 regras de negócio extraídas do código (11 implícitas, nunca documentadas)
-- Bug potencial em cálculo de datas afetando lógica de negócio central
+- Possível bug em cálculo de data afetando lógica de negócio central
 
-**Artefatos gerados (4 entregáveis oficiais do V1):**
+**Artefatos gerados (4 entregáveis oficiais da V1):**
 - **PRS** — Product Refactor Specification consolidando o diagnóstico
 - **SDD** — Software Design Document com arquitetura atual/alvo e 8 ADRs
-- **MMP** — Modernization Master Plan com roadmap em 4 fases (Emergência → Foundation → Core → Evolution), Execution Readiness Score 38→88/100, scores de deployability por fase e estratégias concretas de rollback
-- **37 Execution Specs** — unidades de trabalho atômicas, individualmente deployáveis, com critérios de aceite binários, rollback obrigatório, rastreabilidade de evidências e grafo de dependências
+- **MMP** — Modernization Master Plan com roadmap em 4 fases (Emergency → Foundation → Core → Evolution), Execution Readiness Score 38→88/100, Deployability scores por fase e estratégias concretas de rollback
+- **37 Execution Specs** — unidades de trabalho atômicas e individualmente deployáveis, com critérios de aceite binários, rollback obrigatório, rastreabilidade de evidência e grafo de dependência
 
-**Total:** 50 achados + 4 artefatos consolidados + 37 specs executáveis a partir de um único `npx legacy-squad install` seguido de 9 ativações de slash command.
+**Total:** 50 achados + 4 artefatos consolidados + 37 specs executáveis a partir de um único `npx legacy-squad install` seguido por 9 ativações de slash command.
 
 ---
 
@@ -340,54 +414,37 @@ O framework foi validado contra um **app mobile em produção** (~18k linhas de 
 
 ### Community Edition (V1) — Open Source
 
-Foco: **Entender + Planejar**
+Foco: **Understand + Plan**
 
 - Scanner com detecção multi-stack (PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, Node, React Native/Expo)
 - Compliance Engine com 14 regras determinísticas (OWASP MASVS, ASVS, CWE Top 25)
 - Context Manager (básico)
 - **5 agentes de análise** como slash commands: security, architecture, legacy-code, business-rules, modernization
-- **4 geradores de artefato** como slash commands: PRS, SDD, MMP, Execution Specs
+- **4 geradores de artefatos** como slash commands: PRS, SDD, MMP, Execution Specs
 - Suporte a Claude Code, Codex CLI (Cursor / Gemini CLI no roadmap)
 
 ### Enterprise Edition (V2) — Em desenvolvimento
 
-Foco: **Modernizar**
+Foco: **Modernize**
 
 - Execution Engine (refatoração assistida por IA)
 - Pull Request Engine
 - QA Gates
 - Integração CI/CD
 - Custom Rule Packs
-- Dashboard + Colaboração em Equipe
+- Dashboard + Team Collaboration
 
 ---
 
 ## Roadmap
 
-### V1 — Discovery Platform (Community Edition) ✅
+| Horizonte | Fase | Status |
+|---|---|---|
+| **Now** | V1 Community — melhorias contínuas | 🔵 Ativo |
+| **Next** | V2 Enterprise — execução, refatoração, PRs | 🟡 Em desenho |
+| **Later** | V3 Autonomous — modernização contínua | ⚪ Visão |
 
-- [x] Scanner + Compliance Engine
-- [x] Comando install + integração com IDE
-- [x] Context Manager (básico)
-- [x] Validação end-to-end com projeto real (mobile, ~18k LoC)
-- [x] Catálogo de regras multi-stack (PHP, .NET, Java, Node, mobile)
-- [x] Templates de agentes language-agnostic (stack-aware analysis)
-- [x] 4 artefatos oficiais (PRS, SDD, MMP, Execution Specs)
-
-### V1 — Melhorias contínuas
-
-- [ ] Suporte a Cursor + Gemini CLI
-- [ ] Pacotes de regras framework-specific (Eloquent raw queries, EF Core, Hibernate HQL)
-- [ ] Scanner baseado em AST (atual é regex)
-
-### V2 — Execution Platform (Enterprise Edition) — Em desenvolvimento
-
-- [ ] Execution Engine (refatoração assistida por IA a partir das Execution Specs)
-- [ ] Pull Request Engine
-- [ ] QA Gates
-- [ ] Integração CI/CD
-- [ ] Custom Rule Packs
-- [ ] Dashboard + Colaboração em Equipe
+[**→ Roadmap completo**](ROADMAP.md) · [**→ Influencie a direção**](https://github.com/hrpimenta/legacy-squad/discussions)
 
 ---
 
@@ -417,16 +474,16 @@ node dist/cli.mjs install -p /caminho/do/projeto
 ```
 legacy-squad/
 ├── packages/
-│   ├── core/         # Tipos de domínio, portas (Clean Architecture)
+│   ├── core/         # Tipos de domínio, ports (Clean Architecture)
 │   ├── scanner/      # Detecção de stack, geração de repo index
-│   ├── context/      # Context packs builder
+│   ├── context/      # Builder de context packs
 │   ├── rules/        # Compliance engine, catálogo de regras
-│   ├── agents/       # Definições de agentes, installer, doctor
-│   └── output/       # Gerador de PRS
+│   ├── agents/       # Definições de agentes, instalador, doctor
+│   └── output/       # Gerador do PRS
 ├── apps/
 │   └── cli/          # Entry point da CLI (Commander.js)
 ├── templates/
-│   └── claude-commands/  # Templates dos slash commands
+│   └── claude-commands/  # Templates de slash commands
 └── docs/
     └── plans/        # Decisões de arquitetura, planos
 ```
@@ -434,15 +491,15 @@ legacy-squad/
 ### Testes
 
 ```bash
-npx vitest run          # 93 testes (domínio, scanner, compliance, agentes, installer)
-npx vitest --watch      # Watch mode
+npx vitest run          # 93 testes (domain, scanner, compliance, agents, installer)
+npx vitest --watch      # Modo watch
 ```
 
 ---
 
-## Contribuindo
+## Como Contribuir
 
-1. Faça fork do repositório
+1. Fork do repositório
 2. Crie uma branch (`git checkout -b feature/minha-feature`)
 3. Siga os padrões: TDD (Red→Green→Refactor), SOLID, Clean Architecture
 4. Rode os testes (`npx vitest run`)
@@ -451,7 +508,7 @@ npx vitest --watch      # Watch mode
 ### Formas de contribuir
 
 - Novas regras para o Compliance Engine (PHP, .NET, Java)
-- Melhorias nos templates de agentes
+- Melhorias nos templates dos agentes
 - Suporte a novas IDEs
 - Documentação e tradução
 - Testes e fixtures para outras stacks

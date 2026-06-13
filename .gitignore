@@ -7,3 +7,4 @@ Thumbs.db
 coverage/
 .env
 .env.local
+*.bak 
