@@ -7,107 +7,176 @@
   </p>
 </p>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/legacy-squad"><img src="https://img.shields.io/npm/v/legacy-squad?color=cb3837&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/legacy-squad"><img src="https://img.shields.io/npm/dm/legacy-squad?color=blue" alt="downloads"></a>
+  <a href="https://github.com/hrpimenta/legacy-squad/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="license"></a>
+  <a href="https://github.com/hrpimenta/legacy-squad/stargazers"><img src="https://img.shields.io/github/stars/hrpimenta/legacy-squad?style=social" alt="stars"></a>
+  <img src="https://img.shields.io/badge/status-beta-orange" alt="beta">
+  <img src="https://img.shields.io/badge/node-%E2%89%A518-brightgreen" alt="node">
+</p>
+
 ---
 
-Legacy Squad is an open-source framework that installs inside your legacy project with a single command, automatically analyzes the codebase, and provides specialized AI agents in your IDE to produce a complete diagnostic — without changing a single line of code.
+> **One command. Five AI agents in your IDE.**  
+> **50 findings, 4 engineering documents, and 37 execution specs** — without changing a single line of your code.
 
 ```bash
 npx legacy-squad install
 ```
 
----
+<p align="center">
+  <img src="docs/assets/demo.svg" alt="Legacy Squad install output" width="780">
+</p>
 
-## The Problem
-
-Legacy systems support critical processes, but frequently suffer from:
-
-- Missing or outdated documentation
-- Hardcoded credentials in source code
-- Business rules buried in conditionals no one documented
-- Coupling that makes any change risky
-- Fear of modifying production code
-- Dependency on 1-2 developers who "know the system"
-
-Traditional approaches (full rewrites, unstructured refactoring) are expensive, slow, and risky.
-
-## The Solution
-
-Legacy Squad combines **deterministic analysis** (scanner + compliance engine with OWASP/CWE rules) with **specialized AI agents** that run in your IDE (Claude Code, Codex, Cursor) to produce:
-
-| Artifact | What it does |
-|----------|-------------|
-| **Repo Index** | Full inventory: stack, modules, dependencies, integrations, hotspots |
-| **Findings** | Security findings with evidence, impact, OWASP reference and recommendation |
-| **Security Assessment** | Deep analysis of auth, secrets, LGPD/GDPR, API security |
-| **Architecture Assessment** | C4 diagrams, coupling analysis, structural risks, target architecture |
-| **Legacy Code Assessment** | Hotspots, JS→TS migration, duplication, test coverage |
-| **Business Rules Assessment** | 60+ rules extracted from code, preservation checklist |
-| **Modernization Assessment** | Incremental phased roadmap with rollback and scores |
-| **PRS** | Product Refactor Specification — consolidated diagnostic report |
-| **SDD** | Software Design Document — current/target architecture with ADRs |
-| **MMP** | Modernization Master Plan — phased roadmap with Execution Readiness + Deployability scores |
-| **Execution Specs** | Atomic, individually deployable units of work with binary acceptance criteria and rollback |
+<p align="center">
+  🔑 <strong>Zero API keys</strong> &nbsp;·&nbsp;
+  ☁️ <strong>Zero external servers</strong> &nbsp;·&nbsp;
+  💻 <strong>Runs in your own IDE</strong> (Claude Code, Codex, Cursor)
+</p>
 
 ---
 
-## Quick Start
+## 📊 Validated in Production
+
+Real production mobile app — **~18,000 LoC**, **98 dependencies**, real financial transactions:
+
+| | |
+|---|---|
+| 🔍 **50 findings** (7 deterministic + 43 from AI agents) | 📐 **63 business rules** extracted from code (11 implicit) |
+| 📄 **4 official documents** (PRS · SDD · MMP · Specs) | 🎯 **37 execution specs**, atomic and deployable |
+| 📈 **Execution Readiness:** 38 → 88 / 100 | 🚀 **Deployability:** scored per phase |
+
+From a single `npx legacy-squad install` followed by 9 slash commands in the IDE.
+
+[**→ Read the full case study**](docs/CASE_STUDY.md)
+
+---
+## 🚀 Quick Start
+
+> From zero to your first AI-generated finding in minutes.
 
 ### Prerequisites
 
-- Node.js ≥ 18
-- An AI-enabled IDE: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex), or [Cursor](https://cursor.sh)
+- **Node.js ≥ 18**
+- **An AI-enabled IDE:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex), or [Cursor](https://cursor.sh)
 
-### Installation
+### 1. Install in your legacy project
 
 ```bash
 cd your-legacy-project
 npx legacy-squad install
 ```
 
-The command:
-1. Detects the stack (React Native, PHP, .NET, Java, Node — via manifest)
-2. Scans the repository and generates the inventory
-3. Runs the Compliance Engine (OWASP/CWE rules)
-4. Generates Context Packs per module
-5. Installs agents as slash commands in your IDE
-6. Verifies the installation (8 checks)
+Immediately after, you'll see the framework artifacts in `.legacy-squad/memory/`:
 
-### Usage with Claude Code
+- `repo-index.json` — full inventory (stack, modules, dependencies, integrations)
+- `findings.json` — deterministic security findings (OWASP / CWE)
+- `context-packs.json` — context per module, prepared for the AI agents
+
+<details>
+<summary><strong>What the install command does internally</strong></summary>
+
+1. Detects the stack via manifest (`package.json`, `composer.json`, `.csproj`, `pom.xml`)
+2. Scans the repository and builds the inventory
+3. Runs the Compliance Engine with OWASP / CWE rules
+4. Generates Context Packs per module (token-efficient)
+5. Installs the 9 agents as slash commands in your IDE
+6. Verifies the installation (8 health checks)
+
+</details>
+
+### 2. Run your first AI agent
+
+Open your IDE in the project and trigger the Security Agent.
+
+**Claude Code**
+```bash
+claude
+/legacy-squad-security
+```
+
+**Codex CLI**
+```bash
+codex
+@legacy-squad-security
+```
+
+The assessment is written to:
+
+```
+.legacy-squad/outputs/assessments/security.md
+```
+
+Evidence-driven: every finding includes file:line references, OWASP / CWE mapping, impact, and recommendation — generated by AI running entirely inside your IDE.
+
+### 3. Run the full diagnostic
+
+Once you're satisfied with the first agent, run the remaining four and the four artifact generators.
+
+<details>
+<summary><strong>Full workflow — 5 agents + 4 generators</strong></summary>
+
+**Step 1 — Analysis (run in order)**
 
 ```bash
-claude                              # Open Claude Code in the project
-
-# Step 1 — Analysis (5 agents, run in order)
 /legacy-squad-security              # Security Agent
 /legacy-squad-architecture          # Architecture Agent
 /legacy-squad-legacy-code           # Legacy Code Agent
 /legacy-squad-business-rules        # Business Rules Agent
 /legacy-squad-modernization         # Modernization Agent
+```
 
-# Step 2 — Consolidated artifacts (4 generators, run after analysis)
+**Step 2 — Consolidated artifacts (run after analysis)**
+
+```bash
 /legacy-squad-generate-prs          # Product Refactor Specification
 /legacy-squad-generate-sdd          # Software Design Document
 /legacy-squad-generate-mmp          # Modernization Master Plan
 /legacy-squad-generate-specs        # Execution Specs (one YAML per unit of work)
 ```
 
-### Usage with Codex CLI
+</details>
 
-```bash
-codex                               # Open Codex in the project
-# AGENTS.md at the root defines available agents
-@legacy-squad-security              # Activate Security Agent
-```
-
-### Other Commands
+### Other commands
 
 ```bash
 npx legacy-squad scan               # Re-scan without reinstalling agents
 npx legacy-squad doctor             # Verify installation health
 ```
+## Why Legacy Squad
+
+Most existing tools cover one dimension of legacy modernization. Legacy Squad covers the full lifecycle — from inventory to executable plan — and treats AI agents as **methodology-bound contributors**, not free-form chat.
+
+| Capability | Static Analyzers<br>(SonarQube) | SAST / SCA<br>(Snyk, Checkmarx) | AI Coding Assistants<br>(Copilot, Cursor) | **Legacy Squad** |
+|---|:---:|:---:|:---:|:---:|
+| Deterministic security rules (OWASP / CWE) | ✅ | ✅ | — | ✅ |
+| CVE / dependency vulnerabilities | — | ✅ | — | — |
+| Code smells & cognitive complexity | ✅ | partial | — | ✅ |
+| Architecture mapping (C4, coupling) | — | — | — | ✅ |
+| Business rules extraction from code | — | — | — | ✅ |
+| Phased modernization plan (MMP) | — | — | — | ✅ |
+| Atomic, deployable execution specs | — | — | — | ✅ |
+| AI agents with evidence-bound output | — | — | free-form | ✅ |
+| Runs in your own IDE (no server, no API key) | — | — | ✅ | ✅ |
+| Repository never sent in full to an LLM | n/a | n/a | — | ✅ |
+
+In one sentence: Legacy Squad pairs **deterministic scanning** with **methodology-bound AI agents** that produce **structured engineering artifacts** (PRS, SDD, MMP, Execution Specs) — not chat history.
+
+### When Legacy Squad fits
+
+- You have a legacy system in production and need a **structured diagnostic** before deciding what to modernize.
+- You want every finding to carry **evidence, framework reference, impact, and recommendation** — not unjustified suggestions.
+- You need a **phased modernization plan** that is reversible, deployable, and approvable by humans before execution.
+- You want AI assistance **without sending your codebase to an external server** or paying for another seat.
+
+### When it doesn't
+
+- For pure CVE / dependency vulnerability scanning, use [Snyk](https://snyk.io), [Dependabot](https://github.com/dependabot), or equivalents — they specialize in this and Legacy Squad does not replace them.
+- For continuous CI/CD code-quality gates, use [SonarQube](https://www.sonarsource.com/products/sonarqube/) — Legacy Squad is a **diagnostic and planning** framework, not a continuous quality monitor.
+- For in-editor autocomplete or general coding chat, [GitHub Copilot](https://github.com/features/copilot) and [Cursor](https://cursor.sh) already serve that purpose — Legacy Squad starts where those stop.
 
 ---
-
 ## How It Works
 
 ```
@@ -364,30 +433,13 @@ Focus: **Modernize**
 
 ## Roadmap
 
-### V1 — Discovery Platform (Community Edition) ✅
+| Horizon | Phase | Status |
+|---|---|---|
+| **Now** | V1 Community — continuous improvements | 🔵 Active |
+| **Next** | V2 Enterprise — execution, refactoring, PRs | 🟡 In design |
+| **Later** | V3 Autonomous — continuous modernization | ⚪ Vision |
 
-- [x] Scanner + Compliance Engine
-- [x] Install command + IDE integration
-- [x] Context Manager (basic)
-- [x] End-to-end validation with real project (mobile, ~18k LoC)
-- [x] Multi-stack rule catalog (PHP, .NET, Java, Node, mobile)
-- [x] Language-agnostic agent templates (stack-aware analysis)
-- [x] 4 official artifacts (PRS, SDD, MMP, Execution Specs)
-
-### V1 — Continuous improvements
-
-- [ ] Cursor + Gemini CLI support
-- [ ] Framework-specific rule packs (Eloquent raw queries, EF Core, Hibernate HQL)
-- [ ] AST-based scanner (current is regex-based)
-
-### V2 — Execution Platform (Enterprise Edition) — In development
-
-- [ ] Execution Engine (AI-assisted refactoring from Execution Specs)
-- [ ] Pull Request Engine
-- [ ] QA Gates
-- [ ] CI/CD Integration
-- [ ] Custom Rule Packs
-- [ ] Dashboard + Team Collaboration
+[**→ Full roadmap**](ROADMAP.md) · [**→ Influence it**](https://github.com/hrpimenta/legacy-squad/discussions)
 
 ---
 
