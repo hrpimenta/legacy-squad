@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+email=$(git config user.email)
+case "$email" in
+  *@unimed*|*@csc-uni*|*hrpimentaunimed*)
+    echo "ERRO: email corporativo detectado ($email)."
+    echo "Ajuste com: git config user.email hrpimenta@gmail.com"
+    exit 1
+    ;;
+esac
