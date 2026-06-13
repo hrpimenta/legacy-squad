@@ -499,19 +499,15 @@ npx vitest --watch      # Modo watch
 
 ## Como Contribuir
 
-1. Fork do repositório
-2. Crie uma branch (`git checkout -b feature/minha-feature`)
-3. Siga os padrões: TDD (Red→Green→Refactor), SOLID, Clean Architecture
-4. Rode os testes (`npx vitest run`)
-5. Abra um PR
+Agradecemos contribuições. Consulte o arquivo [CONTRIBUTING.md](CONTRIBUTING.md) para obter informações sobre:
 
-### Formas de contribuir
+- Como adicionar uma regra ao Compliance Engine
+- Como aprimorar os modelos de agentes
+- Como adicionar suporte a IDEs
+- Padrões de engenharia (TDD, SOLID, segurança)
+- Convenções de commit e processo de pull request
 
-- Novas regras para o Compliance Engine (PHP, .NET, Java)
-- Melhorias nos templates dos agentes
-- Suporte a novas IDEs
-- Documentação e tradução
-- Testes e fixtures para outras stacks
+Para perguntas e propostas, [abra uma discussão](https://github.com/hrpimenta/legacy-squad/discussions).
 
 ---
 

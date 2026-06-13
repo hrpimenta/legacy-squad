@@ -494,19 +494,15 @@ npx vitest --watch      # Watch mode
 
 ## Contributing
 
-1. Fork the repository
-2. Create a branch (`git checkout -b feature/my-feature`)
-3. Follow the standards: TDD (Red→Green→Refactor), SOLID, Clean Architecture
-4. Run tests (`npx vitest run`)
-5. Open a PR
+We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
-### Ways to contribute
+- How to add a Compliance Engine rule
+- How to improve agent templates
+- How to add IDE support
+- Engineering standards (TDD, SOLID, security)
+- Commit conventions and PR process
 
-- New rules for the Compliance Engine (PHP, .NET, Java)
-- Agent template improvements
-- New IDE support
-- Documentation and translation
-- Tests and fixtures for other stacks
+For questions and proposals, [open a discussion](https://github.com/hrpimenta/legacy-squad/discussions).
 
 ---
 
@@ -521,4 +517,3 @@ MIT — see [LICENSE](LICENSE) for details.
   <br>
   <em>Legacy Squad Framework</em>
 </p>
-"teste" 
