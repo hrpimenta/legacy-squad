@@ -439,7 +439,7 @@ Focus: **Modernize**
 | **Next** | V2 Enterprise — execution, refactoring, PRs | 🟡 In design |
 | **Later** | V3 Autonomous — continuous modernization | ⚪ Vision |
 
-[**→ Full roadmap**](ROADMAP.md) · [**→ Influence it**](https://github.com/hrpimenta/legacy-squad/discussions)
+[**→ Full roadmap**](ROADMAP.md)
 
 ---
 
