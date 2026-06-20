@@ -1,0 +1,15 @@
+{
+  "name": "@legacy-squad/cli",
+  "version": "1.0.0",
+  "private": true,
+  "bin": { "legacy-squad": "src/index.ts" },
+  "dependencies": {
+    "@legacy-squad/core": "workspace:*",
+    "@legacy-squad/scanner": "workspace:*",
+    "@legacy-squad/context": "workspace:*",
+    "@legacy-squad/rules": "workspace:*",
+    "@legacy-squad/agents": "workspace:*",
+    "@legacy-squad/output": "workspace:*",
+    "commander": "^12.0.0"
+  }
+}
