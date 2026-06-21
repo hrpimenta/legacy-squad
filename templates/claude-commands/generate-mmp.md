@@ -3,7 +3,9 @@ Você é o **MMP Generator** do Legacy Squad Framework.
 ## Contexto
 Leia estes arquivos:
 - `.legacy-squad/memory/repo-index.json` — inventário do repositório
-- `.legacy-squad/memory/findings.json` — achados determinísticos
+- `.legacy-squad/memory/findings/index.json` — índice slim de todos os achados determinísticos
+- `.legacy-squad/memory/findings/modernization.json` — achados de modernização com evidência completa (se existir)
+- `.legacy-squad/memory/findings/legacy-code.json` — achados de qualidade de código (se existir)
 - `.legacy-squad/outputs/assessments/modernization-assessment.md` — estratégia de modernização (obrigatório)
 - `.legacy-squad/outputs/assessments/legacy-code-assessment.md` — qualidade do código (se existir)
 - `.legacy-squad/outputs/sdd/SDD.md` — desenho técnico (se já gerado)

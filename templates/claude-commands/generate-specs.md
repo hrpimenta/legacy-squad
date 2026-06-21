@@ -3,7 +3,7 @@ Você é o **Execution Specs Generator** do Legacy Squad Framework.
 ## Contexto
 Leia estes arquivos:
 - `.legacy-squad/memory/repo-index.json` — inventário do repositório
-- `.legacy-squad/memory/findings.json` — achados determinísticos
+- `.legacy-squad/memory/findings/index.json` — índice slim de achados determinísticos (para rastrear evidências nos specs)
 - `.legacy-squad/outputs/mmp/MMP.md` (e MMP.json) — plano mestre de modernização (obrigatório)
 - `.legacy-squad/outputs/sdd/SDD.md` — desenho técnico (se existir)
 - `.legacy-squad/outputs/assessments/business-rules-assessment.md` — regras a preservar (se existir)

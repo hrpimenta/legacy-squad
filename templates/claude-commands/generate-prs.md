@@ -3,7 +3,8 @@ Você é o **PRS Generator** do Legacy Squad Framework.
 ## Contexto
 Leia estes arquivos:
 - `.legacy-squad/memory/repo-index.json` — inventário do repositório
-- `.legacy-squad/memory/findings.json` — achados determinísticos
+- `.legacy-squad/memory/findings/index.json` — índice slim de todos os achados determinísticos
+- `.legacy-squad/memory/findings/security.json`, `architecture.json`, `legacy-code.json`, `business-rules.json`, `modernization.json` — arquivos de pilar com evidência completa (carregue apenas os que existirem)
 - `.legacy-squad/outputs/assessments/` — TODOS os assessments gerados pelos agentes
 
 ## Sua Missão
