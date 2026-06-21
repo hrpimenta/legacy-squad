@@ -380,6 +380,42 @@ describe('Slash command templates — DT-008: language-agnostic', () => {
       expect(content, `generate-specs.md não declara campo obrigatório "${field}"`).toContain(field);
     }
   });
+
+  it.each([
+    'security.md',
+    'architecture.md',
+    'legacy-code.md',
+    'modernization.md',
+  ])(
+    'template de análise %s deve referenciar findings/<pilar>.json e não findings.json plano',
+    async (file) => {
+      const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
+      // Novo path particionado (findings/<slug>.json ou findings/index.json)
+      expect(content, `${file} não referencia findings/<pilar>.json`).toMatch(/findings\/[a-z-]+\.json/);
+      // Monolítico deve ter sido removido
+      expect(content, `${file} ainda referencia memory/findings.json monolítico`).not.toContain('memory/findings.json');
+    },
+  );
+
+  it.each([
+    'generate-prs.md',
+    'generate-sdd.md',
+    'generate-mmp.md',
+    'generate-specs.md',
+  ])(
+    'gerador %s deve referenciar findings/index.json e não findings.json plano',
+    async (file) => {
+      const content = await readFile(path.join(TEMPLATES_DIR, file), 'utf-8');
+      expect(content, `${file} não referencia findings/index.json`).toContain('findings/index.json');
+      expect(content, `${file} ainda referencia memory/findings.json monolítico`).not.toContain('memory/findings.json');
+    },
+  );
+
+  it('scan.md deve referenciar findings/index.json na verificação e não findings.json plano', async () => {
+    const content = await readFile(path.join(TEMPLATES_DIR, 'scan.md'), 'utf-8');
+    expect(content, 'scan.md não referencia findings/index.json').toContain('findings/index.json');
+    expect(content, 'scan.md ainda referencia memory/findings.json').not.toContain('memory/findings.json');
+  });
 });
 
 describe('Installer — DA-011: findings particionados', () => {
