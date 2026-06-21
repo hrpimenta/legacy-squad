@@ -4,9 +4,11 @@ import { NodeFileSystem, RepoScanner } from '@legacy-squad/scanner';
 import { ContextBuilder } from '@legacy-squad/context';
 import { ComplianceEngine } from '@legacy-squad/rules';
 import { ALL_AGENTS } from './agent-definitions.js';
+import { FindingsWriter } from './findings-writer.js';
 
 export interface InstallResult {
   repoIndexPath: string;
+  /** Caminho de `findings/index.json` (DA-011 — partição slim de findings). */
   findingsPath: string;
   contextPacksPath: string;
   agentCount: number;
@@ -50,11 +52,11 @@ export class Installer {
     await mkdir(memoryDir, { recursive: true });
 
     const repoIndexPath = path.join(memoryDir, 'repo-index.json');
-    const findingsPath = path.join(memoryDir, 'findings.json');
+    const findingsPath = path.join(memoryDir, 'findings', 'index.json');
     const contextPacksPath = path.join(memoryDir, 'context-packs.json');
 
     await writeFile(repoIndexPath, JSON.stringify(repoIndex, null, 2), 'utf-8');
-    await writeFile(findingsPath, JSON.stringify(findings, null, 2), 'utf-8');
+    await new FindingsWriter(fs).write(findings, memoryDir);
     await writeFile(contextPacksPath, JSON.stringify(contextPacks, null, 2), 'utf-8');
 
     // Step 5: Write .legacy-squad/config/

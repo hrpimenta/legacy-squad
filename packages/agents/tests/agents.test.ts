@@ -197,6 +197,12 @@ describe('Installer — DT-004: gravação na raiz efetiva', () => {
       .resolves.toBeDefined();
     await expect(stat(path.join(wrapper, '.legacy-squad'))).rejects.toThrow();
 
+    // DA-011: findings particionados em findings/ (sem findings.json monolítico)
+    await expect(stat(path.join(inner, '.legacy-squad', 'memory', 'findings', 'index.json')))
+      .resolves.toBeDefined();
+    await expect(stat(path.join(inner, '.legacy-squad', 'memory', 'findings.json')))
+      .rejects.toThrow();
+
     // O log de install deve registrar ambos os paths para auditoria
     const logContent = await readFile(
       path.join(inner, '.legacy-squad', 'logs', 'install.log'),
@@ -373,5 +379,58 @@ describe('Slash command templates — DT-008: language-agnostic', () => {
     for (const field of REQUIRED_FIELDS) {
       expect(content, `generate-specs.md não declara campo obrigatório "${field}"`).toContain(field);
     }
+  });
+});
+
+describe('Installer — DA-011: findings particionados', () => {
+  it('deve gravar findings/index.json (slim) e arquivo por pilar, sem findings.json monolítico', async () => {
+    const tmpRoot = await mkdtemp(path.join(tmpdir(), 'ls-da011-'));
+    await mkdir(path.join(tmpRoot, 'src'), { recursive: true });
+    await writeFile(
+      path.join(tmpRoot, 'package.json'),
+      JSON.stringify({ name: 'da011-app', dependencies: { 'react-native': '0.79.5' } }),
+      'utf-8',
+    );
+    // Dispara SEC-CRED-001 — mesmo padrão do compliance.test.ts
+    await writeFile(
+      path.join(tmpRoot, 'src', 'Auth.ts'),
+      "const config = { password: '8wW49oHPq9pC', user: 'admin' };",
+      'utf-8',
+    );
+
+    const templates = path.join(tmpRoot, '__templates');
+    await mkdir(templates, { recursive: true });
+
+    const installer = new Installer();
+    const result = await installer.install(tmpRoot, templates);
+
+    // findingsPath aponta para o index slim
+    expect(result.findingsPath).toMatch(/findings[/\\]index\.json$/);
+
+    const memoryDir = path.join(result.effectiveRoot, '.legacy-squad', 'memory');
+
+    // index.json existe e é um array
+    const rawIndex = await readFile(path.join(memoryDir, 'findings', 'index.json'), 'utf-8');
+    const indexContent = JSON.parse(rawIndex) as Array<Record<string, unknown>>;
+    expect(Array.isArray(indexContent)).toBe(true);
+
+    // entradas slim: têm pillar, não têm evidence
+    if (indexContent.length > 0) {
+      expect(indexContent[0]).toHaveProperty('pillar');
+      expect(indexContent[0]).not.toHaveProperty('evidence');
+      expect(indexContent[0]).not.toHaveProperty('recommendation');
+    }
+
+    // arquivo por pilar de security existe (SEC-CRED-001 deve ter disparado)
+    const securityEntry = indexContent.find((e) => e['pillar'] === 'security');
+    if (securityEntry) {
+      await expect(stat(path.join(memoryDir, 'findings', 'security.json')))
+        .resolves.toBeDefined();
+    }
+
+    // findings.json monolítico NÃO existe
+    await expect(stat(path.join(memoryDir, 'findings.json'))).rejects.toThrow();
+
+    await rm(tmpRoot, { recursive: true, force: true });
   });
 });
