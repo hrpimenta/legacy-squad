@@ -154,3 +154,29 @@
 - Bump de versão para 1.2.0 fica para o fim da feature (não nesta sessão).
 
 **A registrar após o merge de DA-011:** DT-010 — duplicação remanescente de `toPosix` no `prs-generator.ts` (não tocado nesta feature) e duplicação de lógica `installer.ts` ↔ `apps/cli/src/index.ts`.
+
+### Sessão 2 de 4 — concluída [2026-06-21]
+**Escopo:** integração do `FindingsWriter` — `NodeFileSystem` implementa `FileWriterPort`; escrita inline de `findings.json` eliminada do `installer.ts` e do comando `scan` da CLI; testes de integração adicionados; DT-010 registrado.
+
+**Entregue:**
+- `packages/scanner/tests/node-filesystem.test.ts` (novo): 3 testes de `FileWriterPort` com fs real (mkdtemp) — writeFile round-trip, mkdir idempotente, writeFile em dir inexistente rejeita.
+- `NodeFileSystem` em `packages/scanner/src/node-filesystem.ts`: implementa `FileSystemPort, FileWriterPort`; métodos `mkdir` (recursive) e `writeFile` (UTF-8) com TSDoc.
+- `core/src/ports.ts`: pré-condição documentada em `FileWriterPort.writeFile`.
+- `packages/agents/src/installer.ts`: `writeFile(findingsPath, ...)` inline substituído por `new FindingsWriter(fs).write(findings, memoryDir)`; `findingsPath` aponta para `findings/index.json`; TSDoc de `InstallResult.findingsPath` atualizado.
+- `packages/agents/tests/agents.test.ts`: asserts de DA-011 no teste DT-004 (index.json existe, findings.json não existe); novo describe `Installer — DA-011` com 1 teste de integração ponta-a-ponta.
+- `apps/cli/src/index.ts` (comando `scan`): escrita inline de `findings.json` substituída por `FindingsWriter`.
+- DT-010 registrado em `## Débitos Técnicos`.
+- 101 testes verdes (97 anteriores + 4 novos).
+
+**Commits da Sessão 2 (ordem):**
+1. `test(scanner): adiciona testes de FileWriterPort no NodeFileSystem (vermelho)`
+2. `feat(scanner): NodeFileSystem implementa FileWriterPort`
+3. `refactor(agents): installer usa FindingsWriter via FileWriterPort`
+4. `refactor(cli): apps/cli usa FindingsWriter via FileWriterPort`
+5. `docs(memory): registra DT-010 — duplicação de orquestração de escrita de findings`
+6. `docs(memory): registra estado da Sessão 2 de DA-011`
+
+**Para a Sessão 3 (templates + doctor):**
+- Atualizar os 9 templates de slash command em `templates/claude-commands/` que apontam para `findings.json` legado, para lerem `findings/index.json` + arquivos de pilar relevantes a cada gerador.
+- Atualizar o `doctor.ts` com mensagem de migração assistida (estrutura antiga → nova), sem auto-migração, com aviso para `findings.json` legado detectado.
+- Bump de versão para 1.2.0 fica para o fim da feature (Sessão 4).
