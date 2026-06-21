@@ -180,3 +180,26 @@
 - Atualizar os 9 templates de slash command em `templates/claude-commands/` que apontam para `findings.json` legado, para lerem `findings/index.json` + arquivos de pilar relevantes a cada gerador.
 - Atualizar o `doctor.ts` com mensagem de migração assistida (estrutura antiga → nova), sem auto-migração, com aviso para `findings.json` legado detectado.
 - Bump de versão para 1.2.0 fica para o fim da feature (Sessão 4).
+
+### Sessão 3 de 4 — concluída [2026-06-21]
+**Escopo:** migração dos 9 templates de slash command para a estrutura particionada + check de migração no `doctor.ts`. Sem bump de versão (Sessão 4).
+
+**Entregue:**
+- `packages/agents/tests/doctor.test.ts` (novo): 3 testes com fs real — (a) `findings/index.json` presente → ok; (b) `findings.json` legado sem `findings/` → error com mensagem de migração; (c) nenhum → error sem mensagem de migração.
+- `packages/agents/src/doctor.ts`: `checkFindingsStructure()` com TSDoc substitui `checkFile(...findings.json...)` em `check()`; helper privado `pathExists()`.
+- `packages/agents/tests/agents.test.ts`: 9 novos asserts no bloco DT-008 — 4 templates de análise referenciam `findings/<pilar>.json`, 4 geradores referenciam `findings/index.json`, `scan.md` referencia `findings/index.json`; nenhum referencia `memory/findings.json` monolítico.
+- `templates/claude-commands/` (9 arquivos): substituição cirúrgica da linha de contexto `findings.json` → estrutura particionada. Mapeamento: analysis 1:1 com pilar + `index.json`; geradores com `index.json` + pilares relevantes; `scan.md` verificação atualizada.
+- 113 testes verdes (101 anteriores + 3 doctor + 9 novos asserts DT-008).
+
+**Commits da Sessão 3 (ordem):**
+1. `test(agents): doctor detecta findings.json legado e estrutura nova (vermelho)`
+2. `feat(agents): doctor sinaliza estrutura legada e orienta re-install (sem auto-migração)`
+3. `test(agents): templates devem referenciar findings/ particionado (vermelho)`
+4. `feat(templates): migra slash commands de findings.json para findings/`
+5. `docs(memory): registra estado da Sessão 3 de DA-011`
+
+**Para a Sessão 4 (encerramento da DA-011):**
+- Validação E2E com `npx legacy-squad install` em projeto real (confirmar que a estrutura `findings/` é gerada corretamente e o `doctor` passa).
+- Atualização do `ROADMAP.md` registrando a DA-011 como entregue em v1.2.0.
+- Bump de versão para 1.2.0 nos `package.json` relevantes.
+- Fechamento formal da DA-011 no `memory.md` (status final).
