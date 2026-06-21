@@ -9,12 +9,8 @@ import type {
   Severity,
   Priority,
 } from '@legacy-squad/core';
+import { toPosix } from '@legacy-squad/core';
 import { ALL_RULES } from './rule-catalog.js';
-
-/** Normaliza separadores para POSIX — findings são para relatório, não para o SO */
-function toPosix(p: string): string {
-  return p.replace(/\\/g, '/');
-}
 
 const SEVERITY_TO_PRIORITY: Record<Severity, Priority> = {
   critical: 'P0',
