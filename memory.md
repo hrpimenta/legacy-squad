@@ -106,6 +106,12 @@
 **Framework:** TAS Section 16 — Agentes
 **Resolução:** 6 templates de slash command reescritos com seção `## Stack-aware analysis` cobrindo PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, React Native/mobile, Node backend. Coberto por 7 testes (multi-stack coverage + bias-check + invariantes de structure). Ver DA-009.
 
+### DT-010: Duplicação de orquestração de escrita de findings
+**Framework:** Clean Architecture (DRY)
+**Contexto:** A sequência `mkdir(memoryDir)` + `new FindingsWriter(fs).write(findings, memoryDir)` é duplicada em `installer.ts` e `apps/cli/src/index.ts` (comando `scan`). Ambos instanciam `NodeFileSystem` e `FindingsWriter` independentemente.
+**Risco:** Médio — mudanças futuras no fluxo de escrita precisam ser aplicadas em 2 lugares.
+**Prazo:** Próximo PR após DA-011 (v1.2.x).
+
 ### DT-009: Custo de contexto dos geradores consolidados (PRS/SDD/MMP/Specs)
 **Framework:** PRD §15 (Riscos técnicos — excesso de contexto)
 **Contexto:** Durante a validação ponta-a-ponta da beta.8 num projeto real (~25k LoC, fan-out de 253 arquivos), rodar os 4 geradores em sequência consumiu contexto suficiente para forçar 2 compactações de conversa no Claude Code (Opus médio). Causa: cada gerador lê repo-index + findings + N assessments anteriores; MMP lê SDD; Specs lê MMP. Em projetos grandes o context window vira gargalo.
