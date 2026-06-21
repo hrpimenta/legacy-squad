@@ -1,13 +1,13 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, stat, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { FileSystemPort } from '@legacy-squad/core';
+import type { FileSystemPort, FileWriterPort } from '@legacy-squad/core';
 
 const IGNORED_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', '.next', 'vendor',
   '__pycache__', '.gradle', 'bin', 'obj', 'coverage', '.legacy-squad',
 ]);
 
-export class NodeFileSystem implements FileSystemPort {
+export class NodeFileSystem implements FileSystemPort, FileWriterPort {
   async readDir(dirPath: string): Promise<string[]> {
     const entries = await readdir(dirPath, { withFileTypes: true });
     return entries
@@ -37,6 +37,22 @@ export class NodeFileSystem implements FileSystemPort {
     const results: string[] = [];
     await this.walkForGlob(rootPath, pattern, results);
     return results;
+  }
+
+  /**
+   * Garante a existência do diretório criando todos os intermediários.
+   * Idempotente — não lança se o diretório já existir.
+   */
+  async mkdir(dirPath: string): Promise<void> {
+    await mkdir(dirPath, { recursive: true });
+  }
+
+  /**
+   * Escreve (sobrescrevendo) o arquivo com `content` em UTF-8.
+   * Pré-condição: o diretório-pai deve existir — chame `mkdir` antes.
+   */
+  async writeFile(filePath: string, content: string): Promise<void> {
+    await writeFile(filePath, content, 'utf-8');
   }
 
   private async walkForGlob(

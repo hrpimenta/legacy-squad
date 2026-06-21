@@ -19,7 +19,10 @@ export interface FileSystemPort {
 export interface FileWriterPort {
   /** Garante a existência do diretório, criando os intermediários (recursivo). */
   mkdir(dirPath: string): Promise<void>;
-  /** Escreve (sobrescrevendo) o arquivo com o conteúdo dado, em UTF-8. */
+  /**
+   * Escreve (sobrescrevendo) o arquivo com o conteúdo dado, em UTF-8.
+   * Pré-condição: o diretório-pai deve existir — chame `mkdir` antes.
+   */
   writeFile(filePath: string, content: string): Promise<void>;
 }
 
