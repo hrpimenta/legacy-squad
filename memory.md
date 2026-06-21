@@ -120,3 +120,31 @@
 
 ### [2026-06-11] 1.0.1 — Patch de documentação
 **Status:** Patch release que corrige inconsistências no README.md e README.pt-br.md detectadas após o publish 1.0.0. 6 seções desatualizadas foram atualizadas: tabela "The Solution" (adicionado SDD/MMP/Specs), Usage with Claude Code (4 geradores listados), Installed Structure (10 templates + 4 pastas de output), Agents (descrição dos 3 novos generators), Compliance Engine (8 → 14 regras com coluna Stacks), Tests (28 → 93). Zero mudança em código de produção, templates ou comportamento — somente documentação. 93 testes continuam verdes.
+
+## Estado de DA-011
+
+### Sessão 1 de 4 — concluída [2026-06-21]
+**Escopo:** registro da decisão DA-011 + Fase 1 (classe `FindingsWriter` via TDD estrito). Sem integração com installer/doctor/templates.
+
+**Entregue:**
+- DA-011 registrada em `## Decisões Arquiteturais`.
+- `toPosix()` promovido para `@legacy-squad/core` (`core/src/paths.ts`, exportado) e reusado; cópia privada removida do `compliance-engine.ts` (refactor puro — testes do `rules` seguem verdes).
+- `FileWriterPort` adicionada em `core/src/ports.ts`: porta de escrita segregada de `FileSystemPort` (ISP), já que esta é somente-leitura.
+- `FindingsWriter` em `packages/agents/src/findings-writer.ts`: `write(findings, memoryDir)` grava `findings/index.json` (slim: id, pillar, severity, title, priority) + um arquivo por pilar (`<pilar>.json`, slug `_`→`-` via helper privado `pillarToFileName`), pulando pilares sem achados; paths de saída normalizados para POSIX. Recebe `FileWriterPort` por injeção. Exportado em `packages/agents/src/index.ts`.
+- 4 testes em `packages/agents/tests/findings-writer.test.ts`: (a) multi-pilar gera index + arquivos completos; (b) pilar vazio não gera arquivo; (c) index slim com exatamente 5 campos; (d) paths POSIX.
+
+**Commits da Sessão 1 (ordem):**
+1. `docs(memory): registra DA-011 — particionamento de findings por pilar`
+2. `feat(core): adiciona util toPosix e porta FileWriterPort`
+3. `test(findings): adiciona testes do FindingsWriter (vermelho)`
+4. `feat(findings): implementa FindingsWriter com partição por pilar`
+5. `refactor(rules): reusa toPosix do core no compliance-engine`
+6. `docs(memory): registra estado da Sessão 1 de DA-011`
+
+**Para a Sessão 2 (integração):**
+- **Eliminar a escrita inline de findings no `installer.ts`.** Hoje o `installer.ts` escreve `findings.json` direto via `node:fs/promises` (`writeFile(findingsPath, JSON.stringify(findings...))`), violando a regra "toda escrita em `memory/` passa por classe dedicada". A Sessão 2 precisa **remover esse `writeFile` inline** e passar a escrever via `FindingsWriter`, além de fazer o `NodeFileSystem` (ou um adapter) implementar `FileWriterPort`.
+- Atualizar os 9 templates de slash command em `templates/claude-commands/` que apontam para `findings.json`, para lerem `findings/index.json` + os arquivos de pilar relevantes a cada gerador.
+- Atualizar o `doctor.ts` com a mensagem de migração (estrutura antiga → nova), sem auto-migração, incluindo estratégia de abort/aviso para `findings.json` legado.
+- Bump de versão para 1.2.0 fica para o fim da feature (não nesta sessão).
+
+**A registrar após o merge de DA-011:** DT-010 — duplicação remanescente de `toPosix` no `prs-generator.ts` (não tocado nesta feature) e duplicação de lógica `installer.ts` ↔ `apps/cli/src/index.ts`.
