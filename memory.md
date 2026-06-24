@@ -258,3 +258,31 @@
 - Adicionar comando `status` em `apps/cli/src/index.ts` que instancia `LifecycleDetector` (com `NodeFileSystem`) e imprime o dashboard; flag `--json` emite o `LifecycleSnapshot` cru (contrato consumido pelo slash command na Sessão 3).
 - Criar `DashboardRenderer` como função pura `snapshot → string` (SRP, testável isolado), com testes determinísticos de formatação.
 - Sem bump de versão (Sessão 4).
+
+### Sessão 2 de 4 — concluída [2026-06-24]
+**Escopo:** comando de CLI `status` (+`--json`) e `DashboardRenderer`; correção do formato dos slash commands no detector (consequência da Sessão 1). Sem slash command orchestrator (Sessão 3), sem bump (Sessão 4).
+
+**Correção da Sessão 1:** o formato real dos slash commands é flat com prefixo hífen — `/legacy-squad-<cmd>` (arquivos `legacy-squad-<cmd>.md` em `.claude/commands/`), não namespace `:`. O detector emitia `/legacy-squad:<cmd>`; corrigido em `STEPS` (command + reason) e nos 2 asserts do teste. Confirmado pelo texto do `install`, que sempre usou hífen.
+
+**Entregue:**
+- `packages/output/src/dashboard-renderer.ts`: `DashboardRenderer.render(snapshot)` — função pura (não lê fs, não deriva estado; só formata o `LifecycleSnapshot`). Ícones de fase `✓`/`◐`/`·`; nomes curtos (PRS/SDD/MMP/Specs) via mapa de apresentação com fallback para o id; estados "não instalado" e "completo" tratados. Exportado no barrel de `@legacy-squad/output`.
+- `packages/output/tests/dashboard-renderer.test.ts` (novo; pasta `tests/` criada): 4 testes via `toContain`/`toMatch` (scan-only, fase parcial com `◐` e `3/6`, completo sem "próximo passo", não-instalado); um assert garante que o formato `:` não vaza.
+- `apps/cli/src/index.ts`: comando `status` com `--json`; fiação `LifecycleDetector` (NodeFileSystem) → `DashboardRenderer` → `console.log`. Imports de `LifecycleDetector` (@legacy-squad/agents) e `DashboardRenderer` (@legacy-squad/output) adicionados.
+- Smoke manual: `status` e `status --json` na raiz (sem `.legacy-squad`) renderizam o estado "não instalado" corretamente.
+- 124 testes verdes (120 + 4 do renderer; detector mantém 7).
+
+**Commits da Sessão 2 (ordem):**
+1. `test(agents): ajusta asserts do detector para o formato real /legacy-squad-<cmd> (vermelho)`
+2. `fix(agents): detector emite slash commands no formato /legacy-squad-<cmd>`
+3. `test(output): adiciona testes do DashboardRenderer (vermelho)`
+4. `feat(output): implementa DashboardRenderer + export no barrel`
+5. `feat(cli): adiciona comando status com --json (dashboard do lifecycle)`
+6. `docs(memory): registra estado da Sessão 2 de DA-012`
+
+**Para a Sessão 3 (slash command orchestrator + integração):**
+- Criar `templates/claude-commands/legacy-squad.md` (orchestrator `/legacy-squad`): instrui a IA a rodar `npx legacy-squad status --json` e renderizar/explicar sobre o JSON, com fallback de leitura direta de `.legacy-squad/`; respeita a ordem canônica e oferece o próximo passo.
+- Ajustar o `installer.ts` para copiar o orchestrator. **Confirmar primeiro** como os comandos são instalados (flat com prefixo `legacy-squad-`): o orchestrator deve virar `legacy-squad.md` → `/legacy-squad`. Reler o `installer.ts` antes de mexer.
+- Ajustar `doctor.ts`/teste de invariante de template se fizer sentido (verificar orchestrator instalado).
+- Sem bump (Sessão 4).
+
+**Nota:** smoke com estados parciais/completo exige projeto instrumentado (usar `C:\Temp\ls-e2e` no E2E da Sessão 4).
