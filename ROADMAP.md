@@ -1,6 +1,6 @@
 # Legacy Squad Roadmap
 
-**Status:** Public beta · v1.0.0-beta.4
+**Status:** Stable · v1.2.0
 **Last updated:** 2026-06
 
 > This roadmap reflects current direction, not commitments. Priorities shift based on user feedback, real-world validation, and contributions. To suggest a change, [open a discussion](https://github.com/hrpimenta/legacy-squad/discussions).
@@ -40,6 +40,7 @@ Legacy Squad evolves under four constraints:
 - [x] 4 artifact generators as IDE slash commands (PRS, SDD, MMP, Execution Specs)
 - [x] Language-agnostic agent templates (stack-aware prompts at runtime)
 - [x] End-to-end validation with real production project (~18k LoC, mobile)
+- [x] Partitioned findings store — per-pillar files + slim index for token-efficient generators (v1.2.0)
 
 ### 🔵 Now — Continuous improvements
 
