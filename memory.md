@@ -68,6 +68,12 @@
 **Decisão:** substituir o arquivo único por uma pasta `findings/` contendo `index.json` (slim: `id`, `pillar`, `severity`, `title`, `priority`) + um arquivo por pilar com a evidência completa (`security.json`, `architecture.json`, `legacy-code.json`, `business-rules.json`, `modernization.json`). Pilar sem achados não gera arquivo. O `index.json` é um array de entradas slim — sem `evidence`/`recommendation`/`impact`/`frameworks`. O nome do arquivo deriva do `pillar` convertendo `_`→`-` (ex.: `legacy_code` → `legacy-code.json`). A escrita passa por classe dedicada (`FindingsWriter`) recebendo uma `FileWriterPort` por injeção — porta segregada de `FileSystemPort` (ISP), já que esta é somente-leitura.
 **Consequências:** breaking change na estrutura de `memory/`. Requer bump **1.2.0** com migração **assistida via mensagem do `doctor.ts`** (não auto-migração) — a implementação dessa mensagem fica para a Sessão 2 (integração). Os geradores passarão a carregar `index.json` + apenas os arquivos de pilar que consomem. Encerra a escrita inline de findings que hoje existe no `installer.ts` (ver Estado de DA-011, pendência da Sessão 2).
 
+### [2026-06-24] DA-012: Orchestrator `/legacy-squad` com lifecycle dashboard e state detection determinístico
+**Contexto:** O framework tem 10 slash commands (5 análise + 4 geradores + scan) mas nenhum ponto de entrada que mostre onde o projeto está no lifecycle (Discovery→Assessment→Design→Planning→Execution) nem qual o próximo passo. Em sessões retomadas (troca de máquina) ou projetos parciais, o dev precisa inspecionar `.legacy-squad/` manualmente. O `Doctor` já faz checagem determinística de presença de arquivos, mas não mapeia o lifecycle nem deriva próximo passo.
+**Alternativas:** (a) Slash command puro — template instrui a IA a inspecionar `.legacy-squad/` e renderizar o dashboard; zero código novo, mas estado "calculado" pela IA (não determinístico, pode divergir). (b) Comando de CLI determinístico (`status`) que computa e imprime o dashboard; testável por TDD clássico, mas roda fora da IDE. (c) Híbrido: `LifecycleDetector` determinístico em TS exposto tanto como comando de CLI (`status`, com `--json`) quanto consumido pelo slash command `/legacy-squad`, que renderiza sobre o estado já computado.
+**Decisão:** Opção (c). Determinismo onde dá (cálculo de progresso, maturity level e próximo passo em TS testável), IA só para síntese/conversa — mesma linha de DA-004/DA-010. O `LifecycleDetector` recebe `FileSystemPort` (somente-leitura) por injeção (DI/ISP, como DA-011). O estado vira a entidade de domínio `LifecycleSnapshot` em `@legacy-squad/core`. O slash command `/legacy-squad` (arquivo `.claude/commands/legacy-squad.md`, virando comando puro `/legacy-squad`) instrui a IA a rodar `npx legacy-squad status --json` e renderizar sobre o JSON, com fallback de leitura direta. Maturity Level segue FRAMEWORK_SPECIFICATION §10; fases seguem §3. Próximo passo derivado do primeiro gap na ordem canônica (scan → 5 assessments → PRS → SDD → MMP → Specs), o que satisfaz as dependências duras (SDD←architecture-assessment, MMP←modernization-assessment, Specs←MMP) sem regra extra. ERS/Deployability Score ficam fora do detector (saídas qualitativas da IA nos artefatos, não deriváveis por existência de arquivo).
+**Consequências:** Novo comando de CLI `status` e novo slash command `/legacy-squad` (alvo 1.3.0). `LifecycleSnapshot` no core consumido por CLI e renderer (Sessão 2). Reusa primitivas de leitura via `FileSystemPort` (`NodeFileSystem` já implementa). Não refatora o `Doctor` (usa `node:fs` direto, `pathExists` privado) — eventual duplicação conceitual de "exists" fica como candidato a DT-011. Entregue em 4 sessões na branch `feat/da-012-orchestrator` (Sessão 1: núcleo do detector via TDD).
+
 ## Débitos Técnicos
 
 ### DT-001: AST-based detection para V2
@@ -224,3 +230,31 @@
 
 ### DA-011 — concluída [2026-06-21]
 **Status:** entregue em **1.2.0** ao longo de 4 sessões. O `findings.json` monolítico foi substituído por `.legacy-squad/memory/findings/` com `index.json` slim + um arquivo por pilar — escrita via `FindingsWriter` + `FileWriterPort` (porta segregada, ISP), integrada no `installer.ts` e no comando `scan` da CLI; 9 templates migrados; `doctor.ts` detecta estrutura legada e orienta re-install sem auto-migração. Débito remanescente: **DT-010** (duplicação de orquestração de escrita installer ↔ CLI). Follow-up não numerado: dedup de `toPosix` no `prs-generator.ts` (candidato a DT-011). Passos manuais pós-fechamento: merge do PR + `npm publish` da 1.2.0 (estável).
+
+## Estado de DA-012
+
+### Sessão 1 de 4 — concluída [2026-06-24]
+**Escopo:** registro da decisão DA-012 + núcleo determinístico (`LifecycleDetector` via TDD estrito). Sem CLI, sem slash command, sem installer/doctor.
+
+**Entregue:**
+- DA-012 registrada em `## Decisões Arquiteturais`.
+- Entidades de lifecycle em `@legacy-squad/core` (`core/src/entities.ts`, reexportadas pelo barrel): `MaturityLevel`, `LifecyclePhaseId`, `LifecycleStepStatus`, `LifecyclePhaseStatus`, `LifecycleNextStep`, `LifecycleSnapshot`.
+- `LifecycleDetector` em `packages/agents/src/lifecycle-detector.ts`: `detect(projectRoot)` computa o `LifecycleSnapshot` deterministicamente a partir da existência dos artefatos canônicos; recebe `FileSystemPort` por injeção (DI/ISP, reusa `exists`/`readFile`); paths canônicos como constantes; próximo passo = primeiro gap na ordem canônica (scan → 5 assessments → PRS → SDD → MMP → Specs); Maturity Level §10 (specs→5, mmp→4, 5 assessments→3, scan→2, senão 1). Exportado em `packages/agents/src/index.ts`.
+- 7 testes em `packages/agents/tests/lifecycle-detector.test.ts` com mock de `FileSystemPort`: não-instalado, scan-only, parcial 3/5, 5 assessments sem PRS, dependência dura (não sugere generate-mmp sem modernization-assessment), MMP→specs, completo.
+- 120 testes verdes (113 anteriores + 7 novos). Sem refactor adicional (código saiu limpo).
+
+**Paths canônicos fixados (lidos dos templates de análise/geradores):**
+- assessments: `outputs/assessments/{security,architecture,legacy-code,business-rules,modernization}-assessment.md`
+- artefatos: `outputs/reports/PRS.md`, `outputs/sdd/SDD.md`, `outputs/mmp/MMP.md`, `outputs/specs/INDEX.md`
+
+**Commits da Sessão 1 (ordem):**
+1. `docs(memory): registra DA-012 — orchestrator /legacy-squad com lifecycle dashboard`
+2. `feat(core): adiciona entidades de lifecycle (LifecycleSnapshot e tipos)`
+3. `test(agents): adiciona testes do LifecycleDetector (vermelho)`
+4. `feat(agents): implementa LifecycleDetector determinístico via FileSystemPort`
+5. `docs(memory): registra estado da Sessão 1 de DA-012`
+
+**Para a Sessão 2 (CLI status + renderer):**
+- Adicionar comando `status` em `apps/cli/src/index.ts` que instancia `LifecycleDetector` (com `NodeFileSystem`) e imprime o dashboard; flag `--json` emite o `LifecycleSnapshot` cru (contrato consumido pelo slash command na Sessão 3).
+- Criar `DashboardRenderer` como função pura `snapshot → string` (SRP, testável isolado), com testes determinísticos de formatação.
+- Sem bump de versão (Sessão 4).
