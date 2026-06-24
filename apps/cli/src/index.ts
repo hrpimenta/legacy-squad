@@ -26,7 +26,7 @@ function getTemplateDir(): string {
 program
   .name('legacy-squad')
   .description('AI-Powered Legacy Modernization Platform — Understand. Plan. Modernize.')
-  .version('1.0.0');
+  .version('1.2.0');
 
 program
   .command('install')
