@@ -126,3 +126,55 @@ export interface ContextPack {
   readonly risks: ReadonlyArray<string>;
   readonly tokenEstimate: number;
 }
+
+/** Maturity levels per FRAMEWORK_SPECIFICATION §10 (1=Unknown … 6=Continuously Modernized). */
+export type MaturityLevel = 1 | 2 | 3 | 4 | 5 | 6;
+
+/** Lifecycle phases per FRAMEWORK_SPECIFICATION §3. */
+export type LifecyclePhaseId = 'discovery' | 'assessment' | 'design' | 'planning' | 'execution';
+
+/** Status de um passo individual do lifecycle (um assessment ou um gerador de artefato). */
+export interface LifecycleStepStatus {
+  readonly id: string;
+  readonly label: string;
+  /** Slash command que executa o passo, ou null quando o passo é o install da CLI. */
+  readonly command: string | null;
+  readonly done: boolean;
+}
+
+/** Agregação dos passos de uma fase, com contagem de concluídos. */
+export interface LifecyclePhaseStatus {
+  readonly id: LifecyclePhaseId;
+  readonly label: string;
+  readonly steps: ReadonlyArray<LifecycleStepStatus>;
+  readonly doneCount: number;
+  readonly totalCount: number;
+}
+
+/** Próximo passo recomendado, derivado do primeiro gap na ordem canônica do lifecycle. */
+export interface LifecycleNextStep {
+  readonly id: string;
+  /** Slash command a executar, ou null quando a ação é rodar o install da CLI. */
+  readonly command: string | null;
+  readonly reason: string;
+}
+
+/** Snapshot determinístico do estado do lifecycle de um projeto instrumentado pelo framework. */
+export interface LifecycleSnapshot {
+  /** Identificação do projeto lida do repo-index; null quando o framework não foi instalado. */
+  readonly project: {
+    readonly name: string;
+    readonly type: string;
+    readonly stack: ReadonlyArray<string>;
+  } | null;
+  /** true quando `.legacy-squad/memory/repo-index.json` existe. */
+  readonly installed: boolean;
+  readonly findingCount: number;
+  readonly maturityLevel: MaturityLevel;
+  readonly maturityLabel: string;
+  readonly phases: ReadonlyArray<LifecyclePhaseStatus>;
+  /** Próximo passo recomendado; null quando o lifecycle V1 está completo (specs geradas). */
+  readonly nextStep: LifecycleNextStep | null;
+  /** true quando as Execution Specs foram geradas (Level 5 — Modernization Ready). */
+  readonly complete: boolean;
+}
