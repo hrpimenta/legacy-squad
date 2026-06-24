@@ -23,7 +23,7 @@
   "homepage": "https://github.com/hrpimenta/legacy-squad",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hrpimenta/legacy-squad.git"
+    "url": "git+https://github.com/hrpimenta/legacy-squad.git"
   },
   "license": "MIT",
   "author": "Legacy Squad Team",
