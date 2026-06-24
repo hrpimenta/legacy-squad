@@ -127,6 +127,9 @@
 ### [2026-06-11] 1.0.1 — Patch de documentação
 **Status:** Patch release que corrige inconsistências no README.md e README.pt-br.md detectadas após o publish 1.0.0. 6 seções desatualizadas foram atualizadas: tabela "The Solution" (adicionado SDD/MMP/Specs), Usage with Claude Code (4 geradores listados), Installed Structure (10 templates + 4 pastas de output), Agents (descrição dos 3 novos generators), Compliance Engine (8 → 14 regras com coluna Stacks), Tests (28 → 93). Zero mudança em código de produção, templates ou comportamento — somente documentação. 93 testes continuam verdes.
 
+### [2026-06-21] 1.2.0 — Particionamento de findings por pilar (DA-011)
+**Status:** `findings.json` monolítico substituído por `.legacy-squad/memory/findings/` (`index.json` slim + um arquivo por pilar) para reduzir o custo de contexto dos geradores (mitiga DT-009). Breaking change na estrutura de `memory/`; migração assistida via `doctor.ts` (sem auto-migração). Entregue em 4 sessões na branch `feat/da-011-findings-partitioning`; 113 testes verdes. Ver DA-011 e `## Estado de DA-011`.
+
 ## Estado de DA-011
 
 ### Sessão 1 de 4 — concluída [2026-06-21]
@@ -203,3 +206,21 @@
 - Atualização do `ROADMAP.md` registrando a DA-011 como entregue em v1.2.0.
 - Bump de versão para 1.2.0 nos `package.json` relevantes.
 - Fechamento formal da DA-011 no `memory.md` (status final).
+
+### Sessão 4 de 4 — concluída [2026-06-21]
+**Escopo:** validação E2E da partição via CLI real, bump 1.2.0 e fechamento da DA-011.
+
+**Entregue:**
+- **Validação E2E:** `npx legacy-squad install` em projeto real gerou `.legacy-squad/memory/findings/index.json` (array slim) + arquivos por pilar; `findings.json` monolítico ausente; `npx legacy-squad doctor` reportou a estrutura de findings como `ok`.
+- **Bump 1.2.0** sincronizado em `package.json` (raiz), `.version()` da CLI (`apps/cli/src/index.ts`) e `framework_version` do `installer.ts` (todos saindo de `1.0.0`/`1.0.1`).
+- `ROADMAP.md` atualizado: header para `v1.2.0` e item "Partitioned findings store" em Shipped.
+- Marco 1.2.0 registrado em `## Marcos`; DA-011 fechada (abaixo).
+- 113 testes verdes mantidos.
+
+**Commits da Sessão 4 (ordem):**
+1. `chore(release): bump versão para 1.2.0 e sincroniza strings de versão`
+2. `docs: atualiza ROADMAP para 1.2.0 (findings particionado por pilar)`
+3. `docs(memory): fecha DA-011 e registra Sessão 4 + marco 1.2.0`
+
+### DA-011 — concluída [2026-06-21]
+**Status:** entregue em **1.2.0** ao longo de 4 sessões. O `findings.json` monolítico foi substituído por `.legacy-squad/memory/findings/` com `index.json` slim + um arquivo por pilar — escrita via `FindingsWriter` + `FileWriterPort` (porta segregada, ISP), integrada no `installer.ts` e no comando `scan` da CLI; 9 templates migrados; `doctor.ts` detecta estrutura legada e orienta re-install sem auto-migração. Débito remanescente: **DT-010** (duplicação de orquestração de escrita installer ↔ CLI). Follow-up não numerado: dedup de `toPosix` no `prs-generator.ts` (candidato a DT-011). Passos manuais pós-fechamento: merge do PR + `npm publish` da 1.2.0 (estável).
