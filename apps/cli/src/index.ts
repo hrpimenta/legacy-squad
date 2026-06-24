@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { Installer, Doctor } from '@legacy-squad/agents';
+import { Installer, Doctor, FindingsWriter } from '@legacy-squad/agents';
 import { NodeFileSystem, RepoScanner } from '@legacy-squad/scanner';
 import { ComplianceEngine } from '@legacy-squad/rules';
 
@@ -26,7 +26,7 @@ function getTemplateDir(): string {
 program
   .name('legacy-squad')
   .description('AI-Powered Legacy Modernization Platform — Understand. Plan. Modernize.')
-  .version('1.0.0');
+  .version('1.2.0');
 
 program
   .command('install')
@@ -123,7 +123,7 @@ program
     await mkdir(memoryDir, { recursive: true });
 
     await writeFile(path.join(memoryDir, 'repo-index.json'), JSON.stringify(repoIndex, null, 2), 'utf-8');
-    await writeFile(path.join(memoryDir, 'findings.json'), JSON.stringify(findings, null, 2), 'utf-8');
+    await new FindingsWriter(fs).write(findings, memoryDir);
 
     console.log(`✅ Stack: ${repoIndex.stack.map((s) => s.name).join(', ')}`);
     console.log(`📦 Modules: ${repoIndex.modules.length}`);

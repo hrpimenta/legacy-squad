@@ -62,6 +62,12 @@
 **Decisão:** Opção (b). SDD/MMP/Specs exigem síntese qualitativa (ADRs com justificativas, risk matrix com mitigações, specs com critérios de aceite binários) — algo que regex/templates determinísticos não conseguem. A IA é a ferramenta certa, com guard-rails via prompt estruturado. Cada template enumera estrutura obrigatória + regras invioláveis (rollback obrigatório em cada spec, no big-bang, business rules a preservar, etc.). Para Execution Specs, o template lista todos os 12 campos obrigatórios do schema FRAMEWORK_SPECIFICATION §8.
 **Consequências:** V1 do framework completo conforme especificação. Os 4 artefatos oficiais (PRS/SDD/MMP/Specs) podem ser gerados via slash commands no Claude Code. Cada gerador valida pré-requisitos (e.g., generate-mmp exige modernization-assessment.md). Tradeoff: qualidade dos artefatos depende da qualidade dos prompts e da IA — não há validação determinística do output (é prosa estruturada). Testes garantem invariantes estruturais (campos obrigatórios da spec, leitura de assessments anteriores, output em path canônico).
 
+### [2026-06-21] DA-011: Particionamento de findings por pilar (findings/ + index slim)
+**Contexto:** `.legacy-squad/memory/findings.json` é monolítico e carregado integralmente pelos 4 geradores (PRS, SDD, MMP, Specs), mesmo quando cada um precisa apenas de um subconjunto de pilares. Em projeto real validado (~18k LoC, 50 findings) isso força auto-compactação manual da conversa no Claude Code. Relacionado ao DT-009 (custo de contexto dos geradores) — endereça a mitigação (b).
+**Alternativas:** (a) manter o monolito; (b) LLM-side filtering (cada gerador lê tudo e descarta o irrelevante — não reduz tokens de entrada); (c) partição por severidade (não casa com o consumo dos geradores, que é por pilar).
+**Decisão:** substituir o arquivo único por uma pasta `findings/` contendo `index.json` (slim: `id`, `pillar`, `severity`, `title`, `priority`) + um arquivo por pilar com a evidência completa (`security.json`, `architecture.json`, `legacy-code.json`, `business-rules.json`, `modernization.json`). Pilar sem achados não gera arquivo. O `index.json` é um array de entradas slim — sem `evidence`/`recommendation`/`impact`/`frameworks`. O nome do arquivo deriva do `pillar` convertendo `_`→`-` (ex.: `legacy_code` → `legacy-code.json`). A escrita passa por classe dedicada (`FindingsWriter`) recebendo uma `FileWriterPort` por injeção — porta segregada de `FileSystemPort` (ISP), já que esta é somente-leitura.
+**Consequências:** breaking change na estrutura de `memory/`. Requer bump **1.2.0** com migração **assistida via mensagem do `doctor.ts`** (não auto-migração) — a implementação dessa mensagem fica para a Sessão 2 (integração). Os geradores passarão a carregar `index.json` + apenas os arquivos de pilar que consomem. Encerra a escrita inline de findings que hoje existe no `installer.ts` (ver Estado de DA-011, pendência da Sessão 2).
+
 ## Débitos Técnicos
 
 ### DT-001: AST-based detection para V2
@@ -100,6 +106,12 @@
 **Framework:** TAS Section 16 — Agentes
 **Resolução:** 6 templates de slash command reescritos com seção `## Stack-aware analysis` cobrindo PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, React Native/mobile, Node backend. Coberto por 7 testes (multi-stack coverage + bias-check + invariantes de structure). Ver DA-009.
 
+### DT-010: Duplicação de orquestração de escrita de findings
+**Framework:** Clean Architecture (DRY)
+**Contexto:** A sequência `mkdir(memoryDir)` + `new FindingsWriter(fs).write(findings, memoryDir)` é duplicada em `installer.ts` e `apps/cli/src/index.ts` (comando `scan`). Ambos instanciam `NodeFileSystem` e `FindingsWriter` independentemente.
+**Risco:** Médio — mudanças futuras no fluxo de escrita precisam ser aplicadas em 2 lugares.
+**Prazo:** Próximo PR após DA-011 (v1.2.x).
+
 ### DT-009: Custo de contexto dos geradores consolidados (PRS/SDD/MMP/Specs)
 **Framework:** PRD §15 (Riscos técnicos — excesso de contexto)
 **Contexto:** Durante a validação ponta-a-ponta da beta.8 num projeto real (~25k LoC, fan-out de 253 arquivos), rodar os 4 geradores em sequência consumiu contexto suficiente para forçar 2 compactações de conversa no Claude Code (Opus médio). Causa: cada gerador lê repo-index + findings + N assessments anteriores; MMP lê SDD; Specs lê MMP. Em projetos grandes o context window vira gargalo.
@@ -114,3 +126,101 @@
 
 ### [2026-06-11] 1.0.1 — Patch de documentação
 **Status:** Patch release que corrige inconsistências no README.md e README.pt-br.md detectadas após o publish 1.0.0. 6 seções desatualizadas foram atualizadas: tabela "The Solution" (adicionado SDD/MMP/Specs), Usage with Claude Code (4 geradores listados), Installed Structure (10 templates + 4 pastas de output), Agents (descrição dos 3 novos generators), Compliance Engine (8 → 14 regras com coluna Stacks), Tests (28 → 93). Zero mudança em código de produção, templates ou comportamento — somente documentação. 93 testes continuam verdes.
+
+### [2026-06-21] 1.2.0 — Particionamento de findings por pilar (DA-011)
+**Status:** `findings.json` monolítico substituído por `.legacy-squad/memory/findings/` (`index.json` slim + um arquivo por pilar) para reduzir o custo de contexto dos geradores (mitiga DT-009). Breaking change na estrutura de `memory/`; migração assistida via `doctor.ts` (sem auto-migração). Entregue em 4 sessões na branch `feat/da-011-findings-partitioning`; 113 testes verdes. Ver DA-011 e `## Estado de DA-011`.
+
+## Estado de DA-011
+
+### Sessão 1 de 4 — concluída [2026-06-21]
+**Escopo:** registro da decisão DA-011 + Fase 1 (classe `FindingsWriter` via TDD estrito). Sem integração com installer/doctor/templates.
+
+**Entregue:**
+- DA-011 registrada em `## Decisões Arquiteturais`.
+- `toPosix()` promovido para `@legacy-squad/core` (`core/src/paths.ts`, exportado) e reusado; cópia privada removida do `compliance-engine.ts` (refactor puro — testes do `rules` seguem verdes).
+- `FileWriterPort` adicionada em `core/src/ports.ts`: porta de escrita segregada de `FileSystemPort` (ISP), já que esta é somente-leitura.
+- `FindingsWriter` em `packages/agents/src/findings-writer.ts`: `write(findings, memoryDir)` grava `findings/index.json` (slim: id, pillar, severity, title, priority) + um arquivo por pilar (`<pilar>.json`, slug `_`→`-` via helper privado `pillarToFileName`), pulando pilares sem achados; paths de saída normalizados para POSIX. Recebe `FileWriterPort` por injeção. Exportado em `packages/agents/src/index.ts`.
+- 4 testes em `packages/agents/tests/findings-writer.test.ts`: (a) multi-pilar gera index + arquivos completos; (b) pilar vazio não gera arquivo; (c) index slim com exatamente 5 campos; (d) paths POSIX.
+
+**Commits da Sessão 1 (ordem):**
+1. `docs(memory): registra DA-011 — particionamento de findings por pilar`
+2. `feat(core): adiciona util toPosix e porta FileWriterPort`
+3. `test(findings): adiciona testes do FindingsWriter (vermelho)`
+4. `feat(findings): implementa FindingsWriter com partição por pilar`
+5. `refactor(rules): reusa toPosix do core no compliance-engine`
+6. `docs(memory): registra estado da Sessão 1 de DA-011`
+
+**Para a Sessão 2 (integração):**
+- **Eliminar a escrita inline de findings no `installer.ts`.** Hoje o `installer.ts` escreve `findings.json` direto via `node:fs/promises` (`writeFile(findingsPath, JSON.stringify(findings...))`), violando a regra "toda escrita em `memory/` passa por classe dedicada". A Sessão 2 precisa **remover esse `writeFile` inline** e passar a escrever via `FindingsWriter`, além de fazer o `NodeFileSystem` (ou um adapter) implementar `FileWriterPort`.
+- Atualizar os 9 templates de slash command em `templates/claude-commands/` que apontam para `findings.json`, para lerem `findings/index.json` + os arquivos de pilar relevantes a cada gerador.
+- Atualizar o `doctor.ts` com a mensagem de migração (estrutura antiga → nova), sem auto-migração, incluindo estratégia de abort/aviso para `findings.json` legado.
+- Bump de versão para 1.2.0 fica para o fim da feature (não nesta sessão).
+
+**A registrar após o merge de DA-011:** DT-010 — duplicação remanescente de `toPosix` no `prs-generator.ts` (não tocado nesta feature) e duplicação de lógica `installer.ts` ↔ `apps/cli/src/index.ts`.
+
+### Sessão 2 de 4 — concluída [2026-06-21]
+**Escopo:** integração do `FindingsWriter` — `NodeFileSystem` implementa `FileWriterPort`; escrita inline de `findings.json` eliminada do `installer.ts` e do comando `scan` da CLI; testes de integração adicionados; DT-010 registrado.
+
+**Entregue:**
+- `packages/scanner/tests/node-filesystem.test.ts` (novo): 3 testes de `FileWriterPort` com fs real (mkdtemp) — writeFile round-trip, mkdir idempotente, writeFile em dir inexistente rejeita.
+- `NodeFileSystem` em `packages/scanner/src/node-filesystem.ts`: implementa `FileSystemPort, FileWriterPort`; métodos `mkdir` (recursive) e `writeFile` (UTF-8) com TSDoc.
+- `core/src/ports.ts`: pré-condição documentada em `FileWriterPort.writeFile`.
+- `packages/agents/src/installer.ts`: `writeFile(findingsPath, ...)` inline substituído por `new FindingsWriter(fs).write(findings, memoryDir)`; `findingsPath` aponta para `findings/index.json`; TSDoc de `InstallResult.findingsPath` atualizado.
+- `packages/agents/tests/agents.test.ts`: asserts de DA-011 no teste DT-004 (index.json existe, findings.json não existe); novo describe `Installer — DA-011` com 1 teste de integração ponta-a-ponta.
+- `apps/cli/src/index.ts` (comando `scan`): escrita inline de `findings.json` substituída por `FindingsWriter`.
+- DT-010 registrado em `## Débitos Técnicos`.
+- 101 testes verdes (97 anteriores + 4 novos).
+
+**Commits da Sessão 2 (ordem):**
+1. `test(scanner): adiciona testes de FileWriterPort no NodeFileSystem (vermelho)`
+2. `feat(scanner): NodeFileSystem implementa FileWriterPort`
+3. `refactor(agents): installer usa FindingsWriter via FileWriterPort`
+4. `refactor(cli): apps/cli usa FindingsWriter via FileWriterPort`
+5. `docs(memory): registra DT-010 — duplicação de orquestração de escrita de findings`
+6. `docs(memory): registra estado da Sessão 2 de DA-011`
+
+**Para a Sessão 3 (templates + doctor):**
+- Atualizar os 9 templates de slash command em `templates/claude-commands/` que apontam para `findings.json` legado, para lerem `findings/index.json` + arquivos de pilar relevantes a cada gerador.
+- Atualizar o `doctor.ts` com mensagem de migração assistida (estrutura antiga → nova), sem auto-migração, com aviso para `findings.json` legado detectado.
+- Bump de versão para 1.2.0 fica para o fim da feature (Sessão 4).
+
+### Sessão 3 de 4 — concluída [2026-06-21]
+**Escopo:** migração dos 9 templates de slash command para a estrutura particionada + check de migração no `doctor.ts`. Sem bump de versão (Sessão 4).
+
+**Entregue:**
+- `packages/agents/tests/doctor.test.ts` (novo): 3 testes com fs real — (a) `findings/index.json` presente → ok; (b) `findings.json` legado sem `findings/` → error com mensagem de migração; (c) nenhum → error sem mensagem de migração.
+- `packages/agents/src/doctor.ts`: `checkFindingsStructure()` com TSDoc substitui `checkFile(...findings.json...)` em `check()`; helper privado `pathExists()`.
+- `packages/agents/tests/agents.test.ts`: 9 novos asserts no bloco DT-008 — 4 templates de análise referenciam `findings/<pilar>.json`, 4 geradores referenciam `findings/index.json`, `scan.md` referencia `findings/index.json`; nenhum referencia `memory/findings.json` monolítico.
+- `templates/claude-commands/` (9 arquivos): substituição cirúrgica da linha de contexto `findings.json` → estrutura particionada. Mapeamento: analysis 1:1 com pilar + `index.json`; geradores com `index.json` + pilares relevantes; `scan.md` verificação atualizada.
+- 113 testes verdes (101 anteriores + 3 doctor + 9 novos asserts DT-008).
+
+**Commits da Sessão 3 (ordem):**
+1. `test(agents): doctor detecta findings.json legado e estrutura nova (vermelho)`
+2. `feat(agents): doctor sinaliza estrutura legada e orienta re-install (sem auto-migração)`
+3. `test(agents): templates devem referenciar findings/ particionado (vermelho)`
+4. `feat(templates): migra slash commands de findings.json para findings/`
+5. `docs(memory): registra estado da Sessão 3 de DA-011`
+
+**Para a Sessão 4 (encerramento da DA-011):**
+- Validação E2E com `npx legacy-squad install` em projeto real (confirmar que a estrutura `findings/` é gerada corretamente e o `doctor` passa).
+- Atualização do `ROADMAP.md` registrando a DA-011 como entregue em v1.2.0.
+- Bump de versão para 1.2.0 nos `package.json` relevantes.
+- Fechamento formal da DA-011 no `memory.md` (status final).
+
+### Sessão 4 de 4 — concluída [2026-06-21]
+**Escopo:** validação E2E da partição via CLI real, bump 1.2.0 e fechamento da DA-011.
+
+**Entregue:**
+- **Validação E2E:** `npx legacy-squad install` em projeto real gerou `.legacy-squad/memory/findings/index.json` (array slim) + arquivos por pilar; `findings.json` monolítico ausente; `npx legacy-squad doctor` reportou a estrutura de findings como `ok`.
+- **Bump 1.2.0** sincronizado em `package.json` (raiz), `.version()` da CLI (`apps/cli/src/index.ts`) e `framework_version` do `installer.ts` (todos saindo de `1.0.0`/`1.0.1`).
+- `ROADMAP.md` atualizado: header para `v1.2.0` e item "Partitioned findings store" em Shipped.
+- Marco 1.2.0 registrado em `## Marcos`; DA-011 fechada (abaixo).
+- 113 testes verdes mantidos.
+
+**Commits da Sessão 4 (ordem):**
+1. `chore(release): bump versão para 1.2.0 e sincroniza strings de versão`
+2. `docs: atualiza ROADMAP para 1.2.0 (findings particionado por pilar)`
+3. `docs(memory): fecha DA-011 e registra Sessão 4 + marco 1.2.0`
+
+### DA-011 — concluída [2026-06-21]
+**Status:** entregue em **1.2.0** ao longo de 4 sessões. O `findings.json` monolítico foi substituído por `.legacy-squad/memory/findings/` com `index.json` slim + um arquivo por pilar — escrita via `FindingsWriter` + `FileWriterPort` (porta segregada, ISP), integrada no `installer.ts` e no comando `scan` da CLI; 9 templates migrados; `doctor.ts` detecta estrutura legada e orienta re-install sem auto-migração. Débito remanescente: **DT-010** (duplicação de orquestração de escrita installer ↔ CLI). Follow-up não numerado: dedup de `toPosix` no `prs-generator.ts` (candidato a DT-011). Passos manuais pós-fechamento: merge do PR + `npm publish` da 1.2.0 (estável).

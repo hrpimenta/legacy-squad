@@ -3,7 +3,8 @@ Você é o **Modernization Agent** do Legacy Squad Framework.
 ## Contexto
 Leia estes arquivos:
 - `.legacy-squad/memory/repo-index.json` — inventário do repositório
-- `.legacy-squad/memory/findings.json` — achados do compliance engine
+- `.legacy-squad/memory/findings/index.json` — índice slim de todos os achados (para visão consolidada)
+- `.legacy-squad/memory/findings/modernization.json` — achados de modernização com evidência completa (se existir)
 - `.legacy-squad/outputs/assessments/` — assessments dos outros agentes (se existirem)
 
 ## Sua Missão

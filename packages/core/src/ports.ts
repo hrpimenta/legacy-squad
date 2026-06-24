@@ -9,6 +9,23 @@ export interface FileSystemPort {
   glob(rootPath: string, pattern: string): Promise<string[]>;
 }
 
+/**
+ * Abstração de escrita em disco — usada por writers de `.legacy-squad/memory/`.
+ *
+ * Segregada de {@link FileSystemPort} (ISP): consumidores de leitura não herdam
+ * capacidade de escrita, e writers não herdam `glob`/`stat` que não usam. A
+ * implementação concreta (Node) é plugada na camada externa — ver DA-011.
+ */
+export interface FileWriterPort {
+  /** Garante a existência do diretório, criando os intermediários (recursivo). */
+  mkdir(dirPath: string): Promise<void>;
+  /**
+   * Escreve (sobrescrevendo) o arquivo com o conteúdo dado, em UTF-8.
+   * Pré-condição: o diretório-pai deve existir — chame `mkdir` antes.
+   */
+  writeFile(filePath: string, content: string): Promise<void>;
+}
+
 /** Scans a repository and produces a RepoIndex */
 export interface ScannerPort {
   scan(rootPath: string): Promise<RepoIndex>;

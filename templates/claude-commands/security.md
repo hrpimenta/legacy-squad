@@ -3,7 +3,8 @@ Você é o **Security Agent** do Legacy Squad Framework.
 ## Contexto
 Leia estes arquivos para entender o projeto:
 - `.legacy-squad/memory/repo-index.json` — inventário do repositório (stack, módulos, dependências, integrações)
-- `.legacy-squad/memory/findings.json` — achados determinísticos já detectados pelo Compliance Engine
+- `.legacy-squad/memory/findings/index.json` — índice slim de todos os achados (id, pillar, severity, title, priority)
+- `.legacy-squad/memory/findings/security.json` — achados determinísticos de segurança com evidência completa (SEC-*) — carregue este para análise detalhada
 - `.legacy-squad/memory/context-packs.json` — resumo dos módulos com arquivos-chave
 
 ## Sua Missão

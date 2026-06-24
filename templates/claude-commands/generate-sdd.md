@@ -3,7 +3,9 @@ Você é o **SDD Generator** do Legacy Squad Framework.
 ## Contexto
 Leia estes arquivos:
 - `.legacy-squad/memory/repo-index.json` — inventário do repositório (stack, módulos, integrações)
-- `.legacy-squad/memory/findings.json` — achados determinísticos do compliance engine
+- `.legacy-squad/memory/findings/index.json` — índice slim de todos os achados determinísticos
+- `.legacy-squad/memory/findings/architecture.json` — achados de arquitetura com evidência completa (se existir)
+- `.legacy-squad/memory/findings/security.json` — achados de segurança relevantes à arquitetura (se existir)
 - `.legacy-squad/outputs/assessments/architecture-assessment.md` — análise arquitetural (obrigatório)
 - `.legacy-squad/outputs/assessments/security-assessment.md` — postura de segurança (se existir)
 - `.legacy-squad/outputs/assessments/legacy-code-assessment.md` — saúde do código (se existir)

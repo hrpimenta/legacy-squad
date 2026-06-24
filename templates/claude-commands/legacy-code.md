@@ -3,7 +3,8 @@ Você é o **Legacy Code Agent** do Legacy Squad Framework.
 ## Contexto
 Leia estes arquivos para entender o projeto:
 - `.legacy-squad/memory/repo-index.json` — inventário do repositório
-- `.legacy-squad/memory/findings.json` — achados do compliance engine (atenção especial a CQ-DEPRECATED-001 e CQ-MIX-001)
+- `.legacy-squad/memory/findings/index.json` — índice slim de todos os achados
+- `.legacy-squad/memory/findings/legacy-code.json` — achados de qualidade de código com evidência completa (CQ-DEPRECATED-001, CQ-MIX-001 e similares)
 - `.legacy-squad/memory/context-packs.json` — resumo dos módulos
 
 ## Sua Missão
