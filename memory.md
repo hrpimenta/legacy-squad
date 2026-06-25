@@ -312,3 +312,34 @@
 5. `docs(memory): registra correção empírica de formato (Sessão 2.5)`
 
 **Aprendizado:** decisões sobre comportamento observável exigem validação empírica antes da implementação, não leitura de doc nem inspeção de strings de UI. Antes da Sessão 3, sempre rodar `claude` num projeto-cobaia se o comportamento envolver o IDE.
+
+### Sessão 3 de 4 — concluída [2026-06-25]
+**Escopo:** template do orchestrator `/legacy-squad`; integração no `installer.ts` (cópia para a raiz de `commands`); check do orchestrator no `doctor.ts`; invariantes de template (DT-008). Sem E2E (Sessão 4), sem bump (Sessão 4).
+
+**Pré-leitura (lição da 2.5):** reli `installer.ts`, `doctor.ts`, `agents.test.ts` e um template de referência antes de tocar em qualquer coisa.
+
+**Entregue:**
+- `templates/claude-commands/legacy-squad.md` (novo): instrui a IA a rodar `npx legacy-squad status --json`; declara **fallback** de leitura direta de `.legacy-squad/` (`repo-index.json`, `findings/index.json`, assessments, artefatos); reforça a ordem canônica do lifecycle (FRAMEWORK_SPEC §3); orienta a oferecer o `snapshot.nextStep` ao usuário antes de executar qualquer coisa; explicita que **não** escreve em `.legacy-squad/outputs/`.
+- `packages/agents/src/installer.ts`: novo método `copyOrchestrator(templateDir, commandsRoot)` (SRP, mesmo estilo silencioso de `copySlashCommands`). Step 7 do `install()` agora extrai `claudeCommandsRoot` (`.claude/commands`) e chama `copyOrchestrator` depois de `copySlashCommands`. Resultado: `.claude/commands/legacy-squad/<cmd>.md` (subdir, vira `/legacy-squad:<cmd>`) **e** `.claude/commands/legacy-squad.md` (raiz, vira `/legacy-squad` puro). `copySlashCommands` não foi alterado.
+- `packages/agents/src/doctor.ts`: novo check `Orchestrator /legacy-squad` para `.claude/commands/legacy-squad.md`.
+- `packages/agents/tests/agents.test.ts`: nova suite `Orchestrator /legacy-squad — DA-012` com 5 testes (existe; instrui `status --json`; declara fallback com paths canônicos; reforça fases + nextStep; installer copia para a raiz, **não** para o subdir).
+- `packages/agents/tests/doctor.test.ts`: 2 testes novos (orchestrator presente → ok; ausente → error).
+- 131 testes verdes (124 + 5 do orchestrator + 2 do doctor).
+
+**Decisões de implementação (visíveis nos diffs):**
+- O orchestrator vive em `.claude/commands/legacy-squad.md` (raiz), não em `.claude/commands/legacy-squad/legacy-squad.md`. Validado emp. na Sessão 2.5 (autocomplete listou `/legacy-squad` em paralelo com `/legacy-squad:scan` etc.).
+- O orchestrator delega o cálculo do estado ao `LifecycleDetector` via `npx legacy-squad status --json` — a IA não inventa progresso. Fallback (leitura direta de `.legacy-squad/`) cobre o caso de o `status` não estar disponível; em ambos os caminhos as fontes de verdade são os mesmos arquivos canônicos.
+- Doctor agora cobre **7+1+1** ítens (estrutura existente + orchestrator); testes existentes do doctor selecionam por `name`, não por contador total — nada quebrou.
+
+**Commits da Sessão 3 (ordem):**
+1. `feat(templates): adiciona orchestrator /legacy-squad (template para Claude Code)`
+2. `test(agents): adiciona invariantes do orchestrator e teste do install na raiz de commands (DT-008 + DA-012)`
+3. `feat(agents): installer copia legacy-squad.md para .claude/commands/ (raiz, não subdir)`
+4. `test(agents): adiciona check do orchestrator no doctor (DA-012)`
+5. `feat(agents): doctor verifica presença do orchestrator /legacy-squad`
+6. `docs(memory): registra estado da Sessão 3 de DA-012`
+
+**Para a Sessão 4 (E2E + release):**
+- Validar emp. no `appcooperado-main` (já tem framework instalado): re-rodar `npx tsx apps/cli/src/index.ts install` para entregar o orchestrator; abrir `claude` e confirmar que `/legacy-squad` aparece com a descrição do novo template; pedir `/legacy-squad` ao Claude e verificar que ele chama `npx legacy-squad status --json` e renderiza/orienta corretamente.
+- Validar em projeto fresco (`C:\Temp\ls-e2e`) o ciclo não-instalado → scan-only → com assessment parcial, verificando que o dashboard responde corretamente em cada estado.
+- Bump 1.3.0 (`package.json` + `framework_version` no `installer.ts`), publish `--access public`, marco 1.3.0 no `memory.md`, atualizar ROADMAP em Shipped.
