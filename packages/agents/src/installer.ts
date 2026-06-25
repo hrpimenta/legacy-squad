@@ -83,7 +83,7 @@ export class Installer {
       mode: { execution: 'read_only' },
       ide: { primary: 'claude-code' },
       installed_at: new Date().toISOString(),
-      framework_version: '1.2.0',
+      framework_version: '1.3.0',
     };
 
     await writeFile(
