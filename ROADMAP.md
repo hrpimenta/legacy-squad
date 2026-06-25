@@ -1,6 +1,6 @@
 # Legacy Squad Roadmap
 
-**Status:** Stable · v1.2.0
+**Status:** Stable · v1.3.0
 **Last updated:** 2026-06
 
 > This roadmap reflects current direction, not commitments. Priorities shift based on user feedback, real-world validation, and contributions. To suggest a change, [open a discussion](https://github.com/hrpimenta/legacy-squad/discussions).
@@ -41,6 +41,7 @@ Legacy Squad evolves under four constraints:
 - [x] Language-agnostic agent templates (stack-aware prompts at runtime)
 - [x] End-to-end validation with real production project (~18k LoC, mobile)
 - [x] Partitioned findings store — per-pillar files + slim index for token-efficient generators (v1.2.0)
+- [x] Orchestrator `/legacy-squad` slash command with deterministic lifecycle dashboard (Discovery → Assessment → Design → Planning → Execution), Maturity Level detection and next-step suggestion; `status` CLI command with `--json` for IDE integration (v1.3.0)
 
 ### 🔵 Now — Continuous improvements
 
