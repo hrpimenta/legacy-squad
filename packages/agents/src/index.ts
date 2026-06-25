@@ -8,3 +8,4 @@ export { Installer } from './installer.js';
 export type { InstallResult } from './installer.js';
 export { Doctor } from './doctor.js';
 export type { DoctorCheck } from './doctor.js';
+export { LifecycleDetector } from './lifecycle-detector.js';

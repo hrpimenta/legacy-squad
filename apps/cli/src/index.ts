@@ -2,9 +2,10 @@ import { Command } from 'commander';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { Installer, Doctor, FindingsWriter } from '@legacy-squad/agents';
+import { Installer, Doctor, FindingsWriter, LifecycleDetector } from '@legacy-squad/agents';
 import { NodeFileSystem, RepoScanner } from '@legacy-squad/scanner';
 import { ComplianceEngine } from '@legacy-squad/rules';
+import { DashboardRenderer } from '@legacy-squad/output';
 
 const program = new Command();
 
@@ -26,7 +27,7 @@ function getTemplateDir(): string {
 program
   .name('legacy-squad')
   .description('AI-Powered Legacy Modernization Platform — Understand. Plan. Modernize.')
-  .version('1.2.0');
+  .version('1.3.0');
 
 program
   .command('install')
@@ -83,17 +84,17 @@ program
     console.log('    1. Open Claude Code: claude');
     console.log('');
     console.log('  Analysis (run in order):');
-    console.log('    /legacy-squad-security');
-    console.log('    /legacy-squad-architecture');
-    console.log('    /legacy-squad-legacy-code');
-    console.log('    /legacy-squad-business-rules');
-    console.log('    /legacy-squad-modernization');
+    console.log('    /legacy-squad:security');
+    console.log('    /legacy-squad:architecture');
+    console.log('    /legacy-squad:legacy-code');
+    console.log('    /legacy-squad:business-rules');
+    console.log('    /legacy-squad:modernization');
     console.log('');
     console.log('  Consolidated artifacts (run after analysis):');
-    console.log('    /legacy-squad-generate-prs    (Product Refactor Specification)');
-    console.log('    /legacy-squad-generate-sdd    (Software Design Document)');
-    console.log('    /legacy-squad-generate-mmp    (Modernization Master Plan)');
-    console.log('    /legacy-squad-generate-specs  (Execution Specs for V2)');
+    console.log('    /legacy-squad:generate-prs    (Product Refactor Specification)');
+    console.log('    /legacy-squad:generate-sdd    (Software Design Document)');
+    console.log('    /legacy-squad:generate-mmp    (Modernization Master Plan)');
+    console.log('    /legacy-squad:generate-specs  (Execution Specs for V2)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   });
 
@@ -154,6 +155,26 @@ program
     } else {
       console.log('\n✅ All checks passed.\n');
     }
+  });
+
+program
+  .command('status')
+  .description('Show the project lifecycle dashboard and the recommended next step')
+  .option('-p, --path <dir>', 'Project root directory', '.')
+  .option('--json', 'Output the raw lifecycle snapshot as JSON')
+  .action(async (opts: { path: string; json?: boolean }) => {
+    const projectRoot = path.resolve(opts.path);
+    const fs = new NodeFileSystem();
+    const snapshot = await new LifecycleDetector(fs).detect(projectRoot);
+
+    if (opts.json) {
+      console.log(JSON.stringify(snapshot, null, 2));
+      return;
+    }
+
+    console.log('');
+    console.log(new DashboardRenderer().render(snapshot));
+    console.log('');
   });
 
 program.parse();

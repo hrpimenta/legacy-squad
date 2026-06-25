@@ -68,6 +68,12 @@
 **Decisão:** substituir o arquivo único por uma pasta `findings/` contendo `index.json` (slim: `id`, `pillar`, `severity`, `title`, `priority`) + um arquivo por pilar com a evidência completa (`security.json`, `architecture.json`, `legacy-code.json`, `business-rules.json`, `modernization.json`). Pilar sem achados não gera arquivo. O `index.json` é um array de entradas slim — sem `evidence`/`recommendation`/`impact`/`frameworks`. O nome do arquivo deriva do `pillar` convertendo `_`→`-` (ex.: `legacy_code` → `legacy-code.json`). A escrita passa por classe dedicada (`FindingsWriter`) recebendo uma `FileWriterPort` por injeção — porta segregada de `FileSystemPort` (ISP), já que esta é somente-leitura.
 **Consequências:** breaking change na estrutura de `memory/`. Requer bump **1.2.0** com migração **assistida via mensagem do `doctor.ts`** (não auto-migração) — a implementação dessa mensagem fica para a Sessão 2 (integração). Os geradores passarão a carregar `index.json` + apenas os arquivos de pilar que consomem. Encerra a escrita inline de findings que hoje existe no `installer.ts` (ver Estado de DA-011, pendência da Sessão 2).
 
+### [2026-06-24] DA-012: Orchestrator `/legacy-squad` com lifecycle dashboard e state detection determinístico
+**Contexto:** O framework tem 10 slash commands (5 análise + 4 geradores + scan) mas nenhum ponto de entrada que mostre onde o projeto está no lifecycle (Discovery→Assessment→Design→Planning→Execution) nem qual o próximo passo. Em sessões retomadas (troca de máquina) ou projetos parciais, o dev precisa inspecionar `.legacy-squad/` manualmente. O `Doctor` já faz checagem determinística de presença de arquivos, mas não mapeia o lifecycle nem deriva próximo passo.
+**Alternativas:** (a) Slash command puro — template instrui a IA a inspecionar `.legacy-squad/` e renderizar o dashboard; zero código novo, mas estado "calculado" pela IA (não determinístico, pode divergir). (b) Comando de CLI determinístico (`status`) que computa e imprime o dashboard; testável por TDD clássico, mas roda fora da IDE. (c) Híbrido: `LifecycleDetector` determinístico em TS exposto tanto como comando de CLI (`status`, com `--json`) quanto consumido pelo slash command `/legacy-squad`, que renderiza sobre o estado já computado.
+**Decisão:** Opção (c). Determinismo onde dá (cálculo de progresso, maturity level e próximo passo em TS testável), IA só para síntese/conversa — mesma linha de DA-004/DA-010. O `LifecycleDetector` recebe `FileSystemPort` (somente-leitura) por injeção (DI/ISP, como DA-011). O estado vira a entidade de domínio `LifecycleSnapshot` em `@legacy-squad/core`. O slash command `/legacy-squad` (arquivo `.claude/commands/legacy-squad.md`, virando comando puro `/legacy-squad`) instrui a IA a rodar `npx legacy-squad status --json` e renderizar sobre o JSON, com fallback de leitura direta. Maturity Level segue FRAMEWORK_SPECIFICATION §10; fases seguem §3. Próximo passo derivado do primeiro gap na ordem canônica (scan → 5 assessments → PRS → SDD → MMP → Specs), o que satisfaz as dependências duras (SDD←architecture-assessment, MMP←modernization-assessment, Specs←MMP) sem regra extra. ERS/Deployability Score ficam fora do detector (saídas qualitativas da IA nos artefatos, não deriváveis por existência de arquivo).
+**Consequências:** Novo comando de CLI `status` e novo slash command `/legacy-squad` (alvo 1.3.0). `LifecycleSnapshot` no core consumido por CLI e renderer (Sessão 2). Reusa primitivas de leitura via `FileSystemPort` (`NodeFileSystem` já implementa). Não refatora o `Doctor` (usa `node:fs` direto, `pathExists` privado) — eventual duplicação conceitual de "exists" fica como candidato a DT-011. Entregue em 4 sessões na branch `feat/da-012-orchestrator` (Sessão 1: núcleo do detector via TDD).
+
 ## Débitos Técnicos
 
 ### DT-001: AST-based detection para V2
@@ -224,3 +230,144 @@
 
 ### DA-011 — concluída [2026-06-21]
 **Status:** entregue em **1.2.0** ao longo de 4 sessões. O `findings.json` monolítico foi substituído por `.legacy-squad/memory/findings/` com `index.json` slim + um arquivo por pilar — escrita via `FindingsWriter` + `FileWriterPort` (porta segregada, ISP), integrada no `installer.ts` e no comando `scan` da CLI; 9 templates migrados; `doctor.ts` detecta estrutura legada e orienta re-install sem auto-migração. Débito remanescente: **DT-010** (duplicação de orquestração de escrita installer ↔ CLI). Follow-up não numerado: dedup de `toPosix` no `prs-generator.ts` (candidato a DT-011). Passos manuais pós-fechamento: merge do PR + `npm publish` da 1.2.0 (estável).
+
+## Estado de DA-012
+
+### Sessão 1 de 4 — concluída [2026-06-24]
+**Escopo:** registro da decisão DA-012 + núcleo determinístico (`LifecycleDetector` via TDD estrito). Sem CLI, sem slash command, sem installer/doctor.
+
+**Entregue:**
+- DA-012 registrada em `## Decisões Arquiteturais`.
+- Entidades de lifecycle em `@legacy-squad/core` (`core/src/entities.ts`, reexportadas pelo barrel): `MaturityLevel`, `LifecyclePhaseId`, `LifecycleStepStatus`, `LifecyclePhaseStatus`, `LifecycleNextStep`, `LifecycleSnapshot`.
+- `LifecycleDetector` em `packages/agents/src/lifecycle-detector.ts`: `detect(projectRoot)` computa o `LifecycleSnapshot` deterministicamente a partir da existência dos artefatos canônicos; recebe `FileSystemPort` por injeção (DI/ISP, reusa `exists`/`readFile`); paths canônicos como constantes; próximo passo = primeiro gap na ordem canônica (scan → 5 assessments → PRS → SDD → MMP → Specs); Maturity Level §10 (specs→5, mmp→4, 5 assessments→3, scan→2, senão 1). Exportado em `packages/agents/src/index.ts`.
+- 7 testes em `packages/agents/tests/lifecycle-detector.test.ts` com mock de `FileSystemPort`: não-instalado, scan-only, parcial 3/5, 5 assessments sem PRS, dependência dura (não sugere generate-mmp sem modernization-assessment), MMP→specs, completo.
+- 120 testes verdes (113 anteriores + 7 novos). Sem refactor adicional (código saiu limpo).
+
+**Paths canônicos fixados (lidos dos templates de análise/geradores):**
+- assessments: `outputs/assessments/{security,architecture,legacy-code,business-rules,modernization}-assessment.md`
+- artefatos: `outputs/reports/PRS.md`, `outputs/sdd/SDD.md`, `outputs/mmp/MMP.md`, `outputs/specs/INDEX.md`
+
+**Commits da Sessão 1 (ordem):**
+1. `docs(memory): registra DA-012 — orchestrator /legacy-squad com lifecycle dashboard`
+2. `feat(core): adiciona entidades de lifecycle (LifecycleSnapshot e tipos)`
+3. `test(agents): adiciona testes do LifecycleDetector (vermelho)`
+4. `feat(agents): implementa LifecycleDetector determinístico via FileSystemPort`
+5. `docs(memory): registra estado da Sessão 1 de DA-012`
+
+**Para a Sessão 2 (CLI status + renderer):**
+- Adicionar comando `status` em `apps/cli/src/index.ts` que instancia `LifecycleDetector` (com `NodeFileSystem`) e imprime o dashboard; flag `--json` emite o `LifecycleSnapshot` cru (contrato consumido pelo slash command na Sessão 3).
+- Criar `DashboardRenderer` como função pura `snapshot → string` (SRP, testável isolado), com testes determinísticos de formatação.
+- Sem bump de versão (Sessão 4).
+
+### Sessão 2 de 4 — concluída [2026-06-24]
+**Escopo:** comando de CLI `status` (+`--json`) e `DashboardRenderer`; correção do formato dos slash commands no detector (consequência da Sessão 1). Sem slash command orchestrator (Sessão 3), sem bump (Sessão 4).
+
+**Correção da Sessão 1:** o formato real dos slash commands é flat com prefixo hífen — `/legacy-squad-<cmd>` (arquivos `legacy-squad-<cmd>.md` em `.claude/commands/`), não namespace `:`. O detector emitia `/legacy-squad:<cmd>`; corrigido em `STEPS` (command + reason) e nos 2 asserts do teste. Confirmado pelo texto do `install`, que sempre usou hífen.
+
+**Entregue:**
+- `packages/output/src/dashboard-renderer.ts`: `DashboardRenderer.render(snapshot)` — função pura (não lê fs, não deriva estado; só formata o `LifecycleSnapshot`). Ícones de fase `✓`/`◐`/`·`; nomes curtos (PRS/SDD/MMP/Specs) via mapa de apresentação com fallback para o id; estados "não instalado" e "completo" tratados. Exportado no barrel de `@legacy-squad/output`.
+- `packages/output/tests/dashboard-renderer.test.ts` (novo; pasta `tests/` criada): 4 testes via `toContain`/`toMatch` (scan-only, fase parcial com `◐` e `3/6`, completo sem "próximo passo", não-instalado); um assert garante que o formato `:` não vaza.
+- `apps/cli/src/index.ts`: comando `status` com `--json`; fiação `LifecycleDetector` (NodeFileSystem) → `DashboardRenderer` → `console.log`. Imports de `LifecycleDetector` (@legacy-squad/agents) e `DashboardRenderer` (@legacy-squad/output) adicionados.
+- Smoke manual: `status` e `status --json` na raiz (sem `.legacy-squad`) renderizam o estado "não instalado" corretamente.
+- 124 testes verdes (120 + 4 do renderer; detector mantém 7).
+
+**Commits da Sessão 2 (ordem):**
+1. `test(agents): ajusta asserts do detector para o formato real /legacy-squad-<cmd> (vermelho)`
+2. `fix(agents): detector emite slash commands no formato /legacy-squad-<cmd>`
+3. `test(output): adiciona testes do DashboardRenderer (vermelho)`
+4. `feat(output): implementa DashboardRenderer + export no barrel`
+5. `feat(cli): adiciona comando status com --json (dashboard do lifecycle)`
+6. `docs(memory): registra estado da Sessão 2 de DA-012`
+
+**Para a Sessão 3 (slash command orchestrator + integração):**
+- Criar `templates/claude-commands/legacy-squad.md` (orchestrator `/legacy-squad`): instrui a IA a rodar `npx legacy-squad status --json` e renderizar/explicar sobre o JSON, com fallback de leitura direta de `.legacy-squad/`; respeita a ordem canônica e oferece o próximo passo.
+- Ajustar o `installer.ts` para copiar o orchestrator. **Confirmar primeiro** como os comandos são instalados (flat com prefixo `legacy-squad-`): o orchestrator deve virar `legacy-squad.md` → `/legacy-squad`. Reler o `installer.ts` antes de mexer.
+- Ajustar `doctor.ts`/teste de invariante de template se fizer sentido (verificar orchestrator instalado).
+- Sem bump (Sessão 4).
+
+**Nota:** smoke com estados parciais/completo exige projeto instrumentado (usar `C:\Temp\ls-e2e` no E2E da Sessão 4).
+
+### Sessão 2.5 — correção de formato [2026-06-25]
+**Motivo:** validação empírica no Claude Code (CLI nativo, instalado no Windows) provou que o formato real dos slash commands instalados em subdiretório é namespace com dois-pontos — `/legacy-squad:<cmd>` — e que o `/legacy-squad` puro (arquivo `legacy-squad.md` na raiz de `commands`) aparece em paralelo, comprovando que o orchestrator pode usar esse caminho. O autocomplete listou exatamente: `/legacy-squad`, `/legacy-squad:scan`, `/legacy-squad:security`, `/legacy-squad:legacy-code`, `/legacy-squad:generate-prs`.
+
+**O que estava errado:**
+- A Sessão 1 usava `:` (correto), mas eu reli o texto do `install` em `apps/cli/src/index.ts` e dele extraí `-` como formato real — enganado por strings hardcoded que estavam erradas desde antes da DA-012.
+- A Sessão 2 trocou detector + renderer + testes para `-` em cima dessa premissa falsa.
+- Documentação oficial atual do Claude Code afirma que subdiretório só afeta a descrição, não o nome — contradiz a evidência, então a doc está desatualizada. A tela do autocomplete é a fonte de verdade.
+
+**Entregue (correção):**
+- `packages/agents/src/lifecycle-detector.ts`: reverte os 10 `command`/`reason` para `/legacy-squad:<cmd>`; atualiza comentário do `STEPS` descrevendo o esquema real (subdir → namespace `:`).
+- `packages/agents/tests/lifecycle-detector.test.ts`: 2 asserts de comando voltam para `:`.
+- `packages/output/tests/dashboard-renderer.test.ts`: todos os mocks de comando trocados para `:`; salvaguarda invertida (`not.toContain('/legacy-squad-')`) agora prova que o formato `-` não vaza.
+- `apps/cli/src/index.ts`: 9 strings de comando no texto do `install` corrigidas (`/legacy-squad:<cmd>`).
+- `DashboardRenderer` em si não foi alterado — ele só repassa o `command` do snapshot; renderer continua agnóstico ao separador.
+- Não há DA-013: o installer (subdir) está correto, não há migração de esquema.
+- 124 testes verdes esperados.
+
+**Commits da correção:**
+1. `test(agents): asserts do detector voltam para /legacy-squad:<cmd> (vermelho)`
+2. `fix(agents): detector emite slash commands no formato /legacy-squad:<cmd>`
+3. `test(output): ajusta asserts do renderer para o formato /legacy-squad:<cmd>`
+4. `fix(cli): corrige texto do install para o formato real /legacy-squad:<cmd>`
+5. `docs(memory): registra correção empírica de formato (Sessão 2.5)`
+
+**Aprendizado:** decisões sobre comportamento observável exigem validação empírica antes da implementação, não leitura de doc nem inspeção de strings de UI. Antes da Sessão 3, sempre rodar `claude` num projeto-cobaia se o comportamento envolver o IDE.
+
+### Sessão 3 de 4 — concluída [2026-06-25]
+**Escopo:** template do orchestrator `/legacy-squad`; integração no `installer.ts` (cópia para a raiz de `commands`); check do orchestrator no `doctor.ts`; invariantes de template (DT-008). Sem E2E (Sessão 4), sem bump (Sessão 4).
+
+**Pré-leitura (lição da 2.5):** reli `installer.ts`, `doctor.ts`, `agents.test.ts` e um template de referência antes de tocar em qualquer coisa.
+
+**Entregue:**
+- `templates/claude-commands/legacy-squad.md` (novo): instrui a IA a rodar `npx legacy-squad status --json`; declara **fallback** de leitura direta de `.legacy-squad/` (`repo-index.json`, `findings/index.json`, assessments, artefatos); reforça a ordem canônica do lifecycle (FRAMEWORK_SPEC §3); orienta a oferecer o `snapshot.nextStep` ao usuário antes de executar qualquer coisa; explicita que **não** escreve em `.legacy-squad/outputs/`.
+- `packages/agents/src/installer.ts`: novo método `copyOrchestrator(templateDir, commandsRoot)` (SRP, mesmo estilo silencioso de `copySlashCommands`). Step 7 do `install()` agora extrai `claudeCommandsRoot` (`.claude/commands`) e chama `copyOrchestrator` depois de `copySlashCommands`. Resultado: `.claude/commands/legacy-squad/<cmd>.md` (subdir, vira `/legacy-squad:<cmd>`) **e** `.claude/commands/legacy-squad.md` (raiz, vira `/legacy-squad` puro). `copySlashCommands` não foi alterado.
+- `packages/agents/src/doctor.ts`: novo check `Orchestrator /legacy-squad` para `.claude/commands/legacy-squad.md`.
+- `packages/agents/tests/agents.test.ts`: nova suite `Orchestrator /legacy-squad — DA-012` com 5 testes (existe; instrui `status --json`; declara fallback com paths canônicos; reforça fases + nextStep; installer copia para a raiz, **não** para o subdir).
+- `packages/agents/tests/doctor.test.ts`: 2 testes novos (orchestrator presente → ok; ausente → error).
+- 131 testes verdes (124 + 5 do orchestrator + 2 do doctor).
+
+**Decisões de implementação (visíveis nos diffs):**
+- O orchestrator vive em `.claude/commands/legacy-squad.md` (raiz), não em `.claude/commands/legacy-squad/legacy-squad.md`. Validado emp. na Sessão 2.5 (autocomplete listou `/legacy-squad` em paralelo com `/legacy-squad:scan` etc.).
+- O orchestrator delega o cálculo do estado ao `LifecycleDetector` via `npx legacy-squad status --json` — a IA não inventa progresso. Fallback (leitura direta de `.legacy-squad/`) cobre o caso de o `status` não estar disponível; em ambos os caminhos as fontes de verdade são os mesmos arquivos canônicos.
+- Doctor agora cobre **7+1+1** ítens (estrutura existente + orchestrator); testes existentes do doctor selecionam por `name`, não por contador total — nada quebrou.
+
+**Commits da Sessão 3 (ordem):**
+1. `feat(templates): adiciona orchestrator /legacy-squad (template para Claude Code)`
+2. `test(agents): adiciona invariantes do orchestrator e teste do install na raiz de commands (DT-008 + DA-012)`
+3. `feat(agents): installer copia legacy-squad.md para .claude/commands/ (raiz, não subdir)`
+4. `test(agents): adiciona check do orchestrator no doctor (DA-012)`
+5. `feat(agents): doctor verifica presença do orchestrator /legacy-squad`
+6. `docs(memory): registra estado da Sessão 3 de DA-012`
+
+**Para a Sessão 4 (E2E + release):**
+- Validar emp. no `appcooperado-main` (já tem framework instalado): re-rodar `npx tsx apps/cli/src/index.ts install` para entregar o orchestrator; abrir `claude` e confirmar que `/legacy-squad` aparece com a descrição do novo template; pedir `/legacy-squad` ao Claude e verificar que ele chama `npx legacy-squad status --json` e renderiza/orienta corretamente.
+- Validar em projeto fresco (`C:\Temp\ls-e2e`) o ciclo não-instalado → scan-only → com assessment parcial, verificando que o dashboard responde corretamente em cada estado.
+- Bump 1.3.0 (`package.json` + `framework_version` no `installer.ts`), publish `--access public`, marco 1.3.0 no `memory.md`, atualizar ROADMAP em Shipped.
+
+### Sessão 4 de 4 — concluída [2026-06-25]
+**Escopo:** validação empírica no Claude Code real + bump 1.3.0 + atualização de ROADMAP. Sem código novo de produto (só strings de versão e docs).
+
+**E2E entregue:**
+- Reinstalação do framework em `appcooperado-main` (instalação nested em `appcooperado-main\appcooperado-main`): 9/9 checks no `doctor` (era 8/8; entrou `Orchestrator /legacy-squad`).
+- Conferido fisicamente em disco que o template do orchestrator aterrissou em `.claude/commands/legacy-squad.md` (raiz, 2876 bytes, conteúdo do template) e os 10 comandos no subdir `.claude/commands/legacy-squad/`.
+- No Claude Code: autocomplete listou `/legacy-squad` puro com a descrição do novo template (`"Você é o **Orchestrator** do Legacy Squad Framework..."`), em paralelo com `/legacy-squad:scan` etc.
+- Ao invocar `/legacy-squad`, o Claude Code disparou exatamente o comando contratado pelo template: `npx legacy-squad status --json`. O contrato orchestrator → detector ficou comprovado ponta a ponta.
+- O comando em si retornaria erro até a 1.3.0 ser publicada (a 1.2.0 no npm não tem o `status`) — esse é o motivo de o release ser o passo seguinte, não anterior. Validação final do fluxo IA → `status --json` fica como pós-release.
+- Resto da Sessão 3.5 (lixo do teste de plantão no nivel pai do `appcooperado-main`) limpo.
+
+**Achado para futuro DT:** o comando `status` não reusa a heurística de aninhamento do `RepoScanner` (DT-004) — ele resolve para o `.legacy-squad/` do path passado, não detecta automaticamente quando o projeto real está um nível abaixo. Em projetos com manifesto aninhado isso entrega um dashboard "vazio" enganador. Candidato a DT-011 (numeração livre depois da DA-011) ou no próximo disponível.
+
+**Release 1.3.0 (estes commits ainda vão ser feitos manualmente):**
+- `package.json`: 1.2.0 → **1.3.0**.
+- `apps/cli/src/index.ts`: `program.version('1.2.0')` → **`'1.3.0'`**.
+- `packages/agents/src/installer.ts`: `framework_version: '1.2.0'` → **`'1.3.0'`** (único ponto de truth de versão que ainda o installer escreve no `project.yaml` do projeto-alvo).
+- `ROADMAP.md`: header em 1.3.0 + DA-012 em Shipped (orchestrator `/legacy-squad`, dashboard, status CLI).
+- `memory.md`: este registro + fechamento da DA-012 e marco 1.3.0 (logo abaixo).
+
+**Commits da Sessão 4 (ordem):**
+1. `chore(release): bump versão para 1.3.0 e sincroniza strings de versão`
+2. `docs: atualiza ROADMAP para 1.3.0 (orchestrator /legacy-squad)`
+3. `docs(memory): fecha DA-012 e registra Sessão 4 + marco 1.3.0`
+
+### DA-012 — concluída [2026-06-25]
+**Status:** entregue em **1.3.0** ao longo de 4 sessões (+ 1 correção 2.5 de formato). O framework ganhou um ponto de entrada único no IDE — o slash command `/legacy-squad` — que mostra deterministicamente onde o projeto está no lifecycle (Discovery → Assessment → Design → Planning → Execution), o `Maturity Level` (FRAMEWORK_SPEC §10) e qual o próximo passo. Cálculo do estado feito pelo `LifecycleDetector` em TS, via `FileSystemPort` injetada, exposto como entidade de domínio `LifecycleSnapshot` em `@legacy-squad/core` e como comando de CLI `status` (+`--json`). O orchestrator-slash chama o `status --json` e renderiza/orienta sem inventar progresso. Total: **131 testes verdes**, **6 novos arquivos**, **branch `feat/da-012-orchestrator`**. Débito candidato remanescente: `status` não-aware-de-aninhamento (DT a numerar). Passos manuais pós-fechamento: merge do PR + `npm publish` da 1.3.0 (estável); reinstalar no `appcooperado-main` com a 1.3.0 publicada para fechar o E2E do `/legacy-squad → status --json`.

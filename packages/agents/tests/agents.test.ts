@@ -470,3 +470,59 @@ describe('Installer — DA-011: findings particionados', () => {
     await rm(tmpRoot, { recursive: true, force: true });
   });
 });
+
+describe('Orchestrator /legacy-squad — DA-012: template e instalação flat', () => {
+  it('templates/claude-commands/legacy-squad.md existe (vira /legacy-squad no Claude Code)', async () => {
+    const content = await readFile(path.join(TEMPLATES_DIR, 'legacy-squad.md'), 'utf-8');
+    expect(content.length).toBeGreaterThan(100);
+  });
+
+  it('template do orchestrator instrui rodar `npx legacy-squad status --json`', async () => {
+    const content = await readFile(path.join(TEMPLATES_DIR, 'legacy-squad.md'), 'utf-8');
+    expect(content).toContain('npx legacy-squad status --json');
+  });
+
+  it('template do orchestrator declara fallback de leitura direta de .legacy-squad/', async () => {
+    const content = await readFile(path.join(TEMPLATES_DIR, 'legacy-squad.md'), 'utf-8');
+    expect(content.toLowerCase()).toContain('fallback');
+    expect(content).toContain('repo-index.json');
+    expect(content).toContain('findings/index.json');
+  });
+
+  it('template do orchestrator reforça a ordem canônica do lifecycle', async () => {
+    const content = await readFile(path.join(TEMPLATES_DIR, 'legacy-squad.md'), 'utf-8');
+    // pelo menos uma das fases canônicas precisa aparecer com nome
+    expect(content).toMatch(/Discovery|Assessment|Design|Planning|Execution/);
+    expect(content).toContain('nextStep');
+  });
+
+  it('installer copia legacy-squad.md para .claude/commands/legacy-squad.md (raiz, não subdir)', async () => {
+    const tmpRoot = await mkdtemp(path.join(tmpdir(), 'ls-orch-'));
+    await writeFile(
+      path.join(tmpRoot, 'package.json'),
+      JSON.stringify({ name: 'orch-app', dependencies: { express: '^4.0.0' } }),
+      'utf-8',
+    );
+
+    const templates = path.join(tmpRoot, '__templates');
+    await mkdir(templates, { recursive: true });
+    await writeFile(
+      path.join(templates, 'legacy-squad.md'),
+      '# orchestrator stub',
+      'utf-8',
+    );
+
+    const installer = new Installer();
+    const result = await installer.install(tmpRoot, templates);
+
+    // Orchestrator vive na RAÍZ de commands (→ /legacy-squad puro), não no subdir.
+    const orchestratorPath = path.join(result.effectiveRoot, '.claude', 'commands', 'legacy-squad.md');
+    await expect(stat(orchestratorPath)).resolves.toBeDefined();
+
+    // E não no subdir — esse path não pode existir.
+    const wrongPath = path.join(result.effectiveRoot, '.claude', 'commands', 'legacy-squad', 'legacy-squad.md');
+    await expect(stat(wrongPath)).rejects.toThrow();
+
+    await rm(tmpRoot, { recursive: true, force: true });
+  });
+});
