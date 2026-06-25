@@ -286,3 +286,29 @@
 - Sem bump (Sessão 4).
 
 **Nota:** smoke com estados parciais/completo exige projeto instrumentado (usar `C:\Temp\ls-e2e` no E2E da Sessão 4).
+
+### Sessão 2.5 — correção de formato [2026-06-25]
+**Motivo:** validação empírica no Claude Code (CLI nativo, instalado no Windows) provou que o formato real dos slash commands instalados em subdiretório é namespace com dois-pontos — `/legacy-squad:<cmd>` — e que o `/legacy-squad` puro (arquivo `legacy-squad.md` na raiz de `commands`) aparece em paralelo, comprovando que o orchestrator pode usar esse caminho. O autocomplete listou exatamente: `/legacy-squad`, `/legacy-squad:scan`, `/legacy-squad:security`, `/legacy-squad:legacy-code`, `/legacy-squad:generate-prs`.
+
+**O que estava errado:**
+- A Sessão 1 usava `:` (correto), mas eu reli o texto do `install` em `apps/cli/src/index.ts` e dele extraí `-` como formato real — enganado por strings hardcoded que estavam erradas desde antes da DA-012.
+- A Sessão 2 trocou detector + renderer + testes para `-` em cima dessa premissa falsa.
+- Documentação oficial atual do Claude Code afirma que subdiretório só afeta a descrição, não o nome — contradiz a evidência, então a doc está desatualizada. A tela do autocomplete é a fonte de verdade.
+
+**Entregue (correção):**
+- `packages/agents/src/lifecycle-detector.ts`: reverte os 10 `command`/`reason` para `/legacy-squad:<cmd>`; atualiza comentário do `STEPS` descrevendo o esquema real (subdir → namespace `:`).
+- `packages/agents/tests/lifecycle-detector.test.ts`: 2 asserts de comando voltam para `:`.
+- `packages/output/tests/dashboard-renderer.test.ts`: todos os mocks de comando trocados para `:`; salvaguarda invertida (`not.toContain('/legacy-squad-')`) agora prova que o formato `-` não vaza.
+- `apps/cli/src/index.ts`: 9 strings de comando no texto do `install` corrigidas (`/legacy-squad:<cmd>`).
+- `DashboardRenderer` em si não foi alterado — ele só repassa o `command` do snapshot; renderer continua agnóstico ao separador.
+- Não há DA-013: o installer (subdir) está correto, não há migração de esquema.
+- 124 testes verdes esperados.
+
+**Commits da correção:**
+1. `test(agents): asserts do detector voltam para /legacy-squad:<cmd> (vermelho)`
+2. `fix(agents): detector emite slash commands no formato /legacy-squad:<cmd>`
+3. `test(output): ajusta asserts do renderer para o formato /legacy-squad:<cmd>`
+4. `fix(cli): corrige texto do install para o formato real /legacy-squad:<cmd>`
+5. `docs(memory): registra correção empírica de formato (Sessão 2.5)`
+
+**Aprendizado:** decisões sobre comportamento observável exigem validação empírica antes da implementação, não leitura de doc nem inspeção de strings de UI. Antes da Sessão 3, sempre rodar `claude` num projeto-cobaia se o comportamento envolver o IDE.
