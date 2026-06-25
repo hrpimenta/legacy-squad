@@ -108,6 +108,11 @@
 **Risco:** Baixo — regras genéricas por linguagem cobrem 80% do valor. Refinamento de framework cobre os 20% restantes.
 **Prazo sugerido:** Sprint 6+
 
+### DT-011: `toPosix` no `prs-generator.ts`  ❌ DESCARTADO 2026-06-25
+**Framework:** Clean Architecture (DRY) / DA-006
+**Investigação:** Hipótese de que `prs-generator.ts` reimplementaria `toPosix` localmente. Leitura completa do arquivo (`packages/output/src/prs-generator.ts`) descartou a hipótese: não existe `toPosix` local nem `.replace(/\\/g, '/')` inline. O gerador só consome strings já normalizadas a montante (`ev.file` já chega POSIX porque o Compliance Engine usa o `toPosix` centralizado em `@legacy-squad/core/src/paths.ts`). A DA-006 (POSIX em todo output) está sendo honrada sem necessidade de helper local neste módulo.
+**Resolução:** Não há débito. Registro mantido para evitar reabertura futura.
+
 ### DT-008: Templates de agentes language-agnostic  ✅ RESOLVIDO 2026-06-09
 **Framework:** TAS Section 16 — Agentes
 **Resolução:** 6 templates de slash command reescritos com seção `## Stack-aware analysis` cobrindo PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, React Native/mobile, Node backend. Coberto por 7 testes (multi-stack coverage + bias-check + invariantes de structure). Ver DA-009.
@@ -135,6 +140,12 @@
 
 ### [2026-06-21] 1.2.0 — Particionamento de findings por pilar (DA-011)
 **Status:** `findings.json` monolítico substituído por `.legacy-squad/memory/findings/` (`index.json` slim + um arquivo por pilar) para reduzir o custo de contexto dos geradores (mitiga DT-009). Breaking change na estrutura de `memory/`; migração assistida via `doctor.ts` (sem auto-migração). Entregue em 4 sessões na branch `feat/da-011-findings-partitioning`; 113 testes verdes. Ver DA-011 e `## Estado de DA-011`.
+
+### [2026-06-25] 1.3.0 — Orchestrator `/legacy-squad` + lifecycle dashboard (DA-012)
+**Status:** Framework ganhou ponto de entrada único no IDE — slash command `/legacy-squad` que mostra deterministicamente onde o projeto está no lifecycle (Discovery → Assessment → Design → Planning → Execution), o Maturity Level e o próximo passo. Cálculo via `LifecycleDetector` em TS (DI via `FileSystemPort`), exposto como entidade `LifecycleSnapshot` em `@legacy-squad/core` e como comando de CLI `status` (+`--json`). 131 testes verdes, branch `feat/da-012-orchestrator`. Validado emp. no Claude Code real (`/legacy-squad` aparece em paralelo com `/legacy-squad:<cmd>`, IA dispara `npx legacy-squad status --json` exatamente como contratado pelo template). Ver DA-012 e `## Estado de DA-012`.
+
+### [2026-06-25] 1.3.0 — Patch de documentação (READMEs alinhados à release)
+**Status:** Sessão de housekeeping pós-1.3.0. README.md e README.pt-br.md tinham ficado para trás em duas releases (1.2.0 + 1.3.0). Correções aplicadas em paridade nos dois arquivos: formato dos slash commands `/legacy-squad-<cmd>` → `/legacy-squad:<cmd>` (era erro que fazia o usuário copiar comando inválido); `findings.json` → `findings/index.json` (refletindo DA-011); documentação do orchestrator `/legacy-squad` e do comando `status`/`status --json` (entregas da DA-012); 8 health checks → 9; testes 93 → 131; badge `status-beta` → `status-stable`; Cursor marcado como `soon` no tagline, pré-requisitos e diagrama (alinha o doc com o estado real do DT-006, que ainda não entregou suporte Cursor). Hipótese registrada anteriormente de "bug do installer / DA-013 candidato" oficialmente derrubada pela validação empírica da Sessão 2.5 (DA-012): o subdiretório do installer produz corretamente `/legacy-squad:<cmd>` no Claude Code; sem DA-013 a abrir. Zero mudança de código ou comportamento. Issue #10 (DA-012) fechada no GitHub. Pendente: confirmar formato real do Codex CLI (`@legacy-squad-<cmd>` vs alternativa) — sem validação empírica ainda; mantido como está nos READMEs até confirmação.
 
 ## Estado de DA-011
 
