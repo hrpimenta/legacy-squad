@@ -84,17 +84,17 @@ program
     console.log('    1. Open Claude Code: claude');
     console.log('');
     console.log('  Analysis (run in order):');
-    console.log('    /legacy-squad-security');
-    console.log('    /legacy-squad-architecture');
-    console.log('    /legacy-squad-legacy-code');
-    console.log('    /legacy-squad-business-rules');
-    console.log('    /legacy-squad-modernization');
+    console.log('    /legacy-squad:security');
+    console.log('    /legacy-squad:architecture');
+    console.log('    /legacy-squad:legacy-code');
+    console.log('    /legacy-squad:business-rules');
+    console.log('    /legacy-squad:modernization');
     console.log('');
     console.log('  Consolidated artifacts (run after analysis):');
-    console.log('    /legacy-squad-generate-prs    (Product Refactor Specification)');
-    console.log('    /legacy-squad-generate-sdd    (Software Design Document)');
-    console.log('    /legacy-squad-generate-mmp    (Modernization Master Plan)');
-    console.log('    /legacy-squad-generate-specs  (Execution Specs for V2)');
+    console.log('    /legacy-squad:generate-prs    (Product Refactor Specification)');
+    console.log('    /legacy-squad:generate-sdd    (Software Design Document)');
+    console.log('    /legacy-squad:generate-mmp    (Modernization Master Plan)');
+    console.log('    /legacy-squad:generate-specs  (Execution Specs for V2)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   });
 
