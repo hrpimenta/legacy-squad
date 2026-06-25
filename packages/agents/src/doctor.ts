@@ -16,6 +16,7 @@ export class Doctor {
     checks.push(await this.checkFile(projectRoot, '.legacy-squad/memory/context-packs.json', 'Context Packs'));
     checks.push(await this.checkFile(projectRoot, '.legacy-squad/config/project.yaml', 'Project Config'));
     checks.push(await this.checkDir(projectRoot, '.claude/commands/legacy-squad', 'Claude Code Agents'));
+    checks.push(await this.checkFile(projectRoot, '.claude/commands/legacy-squad.md', 'Orchestrator /legacy-squad'));
     checks.push(await this.checkFile(projectRoot, 'AGENTS.md', 'Codex AGENTS.md'));
     checks.push(await this.checkDir(projectRoot, '.legacy-squad/outputs/assessments', 'Assessments Dir'));
     checks.push(await this.checkDir(projectRoot, '.legacy-squad/outputs/reports', 'Reports Dir'));
