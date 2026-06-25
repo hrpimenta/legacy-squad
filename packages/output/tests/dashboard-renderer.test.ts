@@ -57,12 +57,12 @@ const PROJECT = { name: 'app-beneficiario', type: 'mobile', stack: ['react-nativ
 
 function assessmentPhase(doneIds: string[]): LifecyclePhaseStatus {
   const all: Array<[string, string]> = [
-    ['security', '/legacy-squad-security'],
-    ['architecture', '/legacy-squad-architecture'],
-    ['legacy-code', '/legacy-squad-legacy-code'],
-    ['business-rules', '/legacy-squad-business-rules'],
-    ['modernization', '/legacy-squad-modernization'],
-    ['generate-prs', '/legacy-squad-generate-prs'],
+    ['security', '/legacy-squad:security'],
+    ['architecture', '/legacy-squad:architecture'],
+    ['legacy-code', '/legacy-squad:legacy-code'],
+    ['business-rules', '/legacy-squad:business-rules'],
+    ['modernization', '/legacy-squad:modernization'],
+    ['generate-prs', '/legacy-squad:generate-prs'],
   ];
   return phase(
     'assessment',
@@ -84,14 +84,14 @@ describe('DashboardRenderer — DA-012: render do lifecycle dashboard', () => {
         phases: [
           phase('discovery', 'Discovery', [['scan', '', true]]),
           assessmentPhase([]),
-          phase('design', 'Design', [['generate-sdd', '/legacy-squad-generate-sdd', false]]),
-          phase('planning', 'Planning', [['generate-mmp', '/legacy-squad-generate-mmp', false]]),
-          phase('execution', 'Execution', [['generate-specs', '/legacy-squad-generate-specs', false]]),
+          phase('design', 'Design', [['generate-sdd', '/legacy-squad:generate-sdd', false]]),
+          phase('planning', 'Planning', [['generate-mmp', '/legacy-squad:generate-mmp', false]]),
+          phase('execution', 'Execution', [['generate-specs', '/legacy-squad:generate-specs', false]]),
         ],
         nextStep: {
           id: 'security',
-          command: '/legacy-squad-security',
-          reason: 'Inicie os assessments rodando `/legacy-squad-security`.',
+          command: '/legacy-squad:security',
+          reason: 'Inicie os assessments rodando `/legacy-squad:security`.',
         },
       }),
     );
@@ -100,8 +100,8 @@ describe('DashboardRenderer — DA-012: render do lifecycle dashboard', () => {
     expect(out).toContain('react-native');
     expect(out).toContain('Level 2 — Understood');
     expect(out).toMatch(/Findings\s+50/);
-    expect(out).toContain('→ Próximo passo: /legacy-squad-security');
-    expect(out).not.toContain('/legacy-squad:'); // garante que não vazou o formato com dois-pontos
+    expect(out).toContain('→ Próximo passo: /legacy-squad:security');
+    expect(out).not.toContain('/legacy-squad-'); // garante que não vazou o formato com hífen
   });
 
   it('fase parcial usa ◐ e contador correto; fase completa usa ✓', () => {
@@ -114,14 +114,14 @@ describe('DashboardRenderer — DA-012: render do lifecycle dashboard', () => {
         phases: [
           phase('discovery', 'Discovery', [['scan', '', true]]),
           assessmentPhase(['security', 'architecture', 'legacy-code']), // 3/6
-          phase('design', 'Design', [['generate-sdd', '/legacy-squad-generate-sdd', false]]),
-          phase('planning', 'Planning', [['generate-mmp', '/legacy-squad-generate-mmp', false]]),
-          phase('execution', 'Execution', [['generate-specs', '/legacy-squad-generate-specs', false]]),
+          phase('design', 'Design', [['generate-sdd', '/legacy-squad:generate-sdd', false]]),
+          phase('planning', 'Planning', [['generate-mmp', '/legacy-squad:generate-mmp', false]]),
+          phase('execution', 'Execution', [['generate-specs', '/legacy-squad:generate-specs', false]]),
         ],
         nextStep: {
           id: 'business-rules',
-          command: '/legacy-squad-business-rules',
-          reason: 'Rode `/legacy-squad-business-rules`.',
+          command: '/legacy-squad:business-rules',
+          reason: 'Rode `/legacy-squad:business-rules`.',
         },
       }),
     );
@@ -142,9 +142,9 @@ describe('DashboardRenderer — DA-012: render do lifecycle dashboard', () => {
         phases: [
           phase('discovery', 'Discovery', [['scan', '', true]]),
           assessmentPhase(done),
-          phase('design', 'Design', [['generate-sdd', '/legacy-squad-generate-sdd', true]]),
-          phase('planning', 'Planning', [['generate-mmp', '/legacy-squad-generate-mmp', true]]),
-          phase('execution', 'Execution', [['generate-specs', '/legacy-squad-generate-specs', true]]),
+          phase('design', 'Design', [['generate-sdd', '/legacy-squad:generate-sdd', true]]),
+          phase('planning', 'Planning', [['generate-mmp', '/legacy-squad:generate-mmp', true]]),
+          phase('execution', 'Execution', [['generate-specs', '/legacy-squad:generate-specs', true]]),
         ],
         nextStep: null,
         complete: true,
@@ -166,9 +166,9 @@ describe('DashboardRenderer — DA-012: render do lifecycle dashboard', () => {
         phases: [
           phase('discovery', 'Discovery', notDone),
           assessmentPhase([]),
-          phase('design', 'Design', [['generate-sdd', '/legacy-squad-generate-sdd', false]]),
-          phase('planning', 'Planning', [['generate-mmp', '/legacy-squad-generate-mmp', false]]),
-          phase('execution', 'Execution', [['generate-specs', '/legacy-squad-generate-specs', false]]),
+          phase('design', 'Design', [['generate-sdd', '/legacy-squad:generate-sdd', false]]),
+          phase('planning', 'Planning', [['generate-mmp', '/legacy-squad:generate-mmp', false]]),
+          phase('execution', 'Execution', [['generate-specs', '/legacy-squad:generate-specs', false]]),
         ],
         nextStep: {
           id: 'install',
