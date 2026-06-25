@@ -343,3 +343,31 @@
 - Validar emp. no `appcooperado-main` (já tem framework instalado): re-rodar `npx tsx apps/cli/src/index.ts install` para entregar o orchestrator; abrir `claude` e confirmar que `/legacy-squad` aparece com a descrição do novo template; pedir `/legacy-squad` ao Claude e verificar que ele chama `npx legacy-squad status --json` e renderiza/orienta corretamente.
 - Validar em projeto fresco (`C:\Temp\ls-e2e`) o ciclo não-instalado → scan-only → com assessment parcial, verificando que o dashboard responde corretamente em cada estado.
 - Bump 1.3.0 (`package.json` + `framework_version` no `installer.ts`), publish `--access public`, marco 1.3.0 no `memory.md`, atualizar ROADMAP em Shipped.
+
+### Sessão 4 de 4 — concluída [2026-06-25]
+**Escopo:** validação empírica no Claude Code real + bump 1.3.0 + atualização de ROADMAP. Sem código novo de produto (só strings de versão e docs).
+
+**E2E entregue:**
+- Reinstalação do framework em `appcooperado-main` (instalação nested em `appcooperado-main\appcooperado-main`): 9/9 checks no `doctor` (era 8/8; entrou `Orchestrator /legacy-squad`).
+- Conferido fisicamente em disco que o template do orchestrator aterrissou em `.claude/commands/legacy-squad.md` (raiz, 2876 bytes, conteúdo do template) e os 10 comandos no subdir `.claude/commands/legacy-squad/`.
+- No Claude Code: autocomplete listou `/legacy-squad` puro com a descrição do novo template (`"Você é o **Orchestrator** do Legacy Squad Framework..."`), em paralelo com `/legacy-squad:scan` etc.
+- Ao invocar `/legacy-squad`, o Claude Code disparou exatamente o comando contratado pelo template: `npx legacy-squad status --json`. O contrato orchestrator → detector ficou comprovado ponta a ponta.
+- O comando em si retornaria erro até a 1.3.0 ser publicada (a 1.2.0 no npm não tem o `status`) — esse é o motivo de o release ser o passo seguinte, não anterior. Validação final do fluxo IA → `status --json` fica como pós-release.
+- Resto da Sessão 3.5 (lixo do teste de plantão no nivel pai do `appcooperado-main`) limpo.
+
+**Achado para futuro DT:** o comando `status` não reusa a heurística de aninhamento do `RepoScanner` (DT-004) — ele resolve para o `.legacy-squad/` do path passado, não detecta automaticamente quando o projeto real está um nível abaixo. Em projetos com manifesto aninhado isso entrega um dashboard "vazio" enganador. Candidato a DT-011 (numeração livre depois da DA-011) ou no próximo disponível.
+
+**Release 1.3.0 (estes commits ainda vão ser feitos manualmente):**
+- `package.json`: 1.2.0 → **1.3.0**.
+- `apps/cli/src/index.ts`: `program.version('1.2.0')` → **`'1.3.0'`**.
+- `packages/agents/src/installer.ts`: `framework_version: '1.2.0'` → **`'1.3.0'`** (único ponto de truth de versão que ainda o installer escreve no `project.yaml` do projeto-alvo).
+- `ROADMAP.md`: header em 1.3.0 + DA-012 em Shipped (orchestrator `/legacy-squad`, dashboard, status CLI).
+- `memory.md`: este registro + fechamento da DA-012 e marco 1.3.0 (logo abaixo).
+
+**Commits da Sessão 4 (ordem):**
+1. `chore(release): bump versão para 1.3.0 e sincroniza strings de versão`
+2. `docs: atualiza ROADMAP para 1.3.0 (orchestrator /legacy-squad)`
+3. `docs(memory): fecha DA-012 e registra Sessão 4 + marco 1.3.0`
+
+### DA-012 — concluída [2026-06-25]
+**Status:** entregue em **1.3.0** ao longo de 4 sessões (+ 1 correção 2.5 de formato). O framework ganhou um ponto de entrada único no IDE — o slash command `/legacy-squad` — que mostra deterministicamente onde o projeto está no lifecycle (Discovery → Assessment → Design → Planning → Execution), o `Maturity Level` (FRAMEWORK_SPEC §10) e qual o próximo passo. Cálculo do estado feito pelo `LifecycleDetector` em TS, via `FileSystemPort` injetada, exposto como entidade de domínio `LifecycleSnapshot` em `@legacy-squad/core` e como comando de CLI `status` (+`--json`). O orchestrator-slash chama o `status --json` e renderiza/orienta sem inventar progresso. Total: **131 testes verdes**, **6 novos arquivos**, **branch `feat/da-012-orchestrator`**. Débito candidato remanescente: `status` não-aware-de-aninhamento (DT a numerar). Passos manuais pós-fechamento: merge do PR + `npm publish` da 1.3.0 (estável); reinstalar no `appcooperado-main` com a 1.3.0 publicada para fechar o E2E do `/legacy-squad → status --json`.
