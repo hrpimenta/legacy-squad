@@ -12,7 +12,7 @@
   <a href="https://www.npmjs.com/package/legacy-squad"><img src="https://img.shields.io/npm/dm/legacy-squad?color=blue" alt="downloads"></a>
   <a href="https://github.com/hrpimenta/legacy-squad/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="license"></a>
   <a href="https://github.com/hrpimenta/legacy-squad/stargazers"><img src="https://img.shields.io/github/stars/hrpimenta/legacy-squad?style=social" alt="stars"></a>
-  <img src="https://img.shields.io/badge/status-beta-orange" alt="beta">
+  <img src="https://img.shields.io/badge/status-stable-brightgreen" alt="stable">
   <img src="https://img.shields.io/badge/node-%E2%89%A518-brightgreen" alt="node">
 </p>
 
@@ -32,7 +32,7 @@ npx legacy-squad install
 <p align="center">
   🔑 <strong>Zero API keys</strong> &nbsp;·&nbsp;
   ☁️ <strong>Zero servidores externos</strong> &nbsp;·&nbsp;
-  💻 <strong>Roda na sua própria IDE</strong> (Claude Code, Codex, Cursor)
+  💻 <strong>Roda na sua própria IDE</strong> (Claude Code, Codex — Cursor em breve)
 </p>
 
 ---
@@ -60,7 +60,7 @@ A partir de um único `npx legacy-squad install` seguido por 9 slash commands na
 ### Pré-requisitos
 
 - **Node.js ≥ 18**
-- **Uma IDE com IA habilitada:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex) ou [Cursor](https://cursor.sh)
+- **Uma IDE com IA habilitada:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) ou [Codex CLI](https://github.com/openai/codex) ([Cursor](https://cursor.sh) em breve)
 
 ### 1. Instale no seu projeto legado
 
@@ -72,7 +72,7 @@ npx legacy-squad install
 Logo em seguida, você verá os artefatos do framework em `.legacy-squad/memory/`:
 
 - `repo-index.json` — inventário completo (stack, módulos, dependências, integrações)
-- `findings.json` — achados de segurança determinísticos (OWASP / CWE)
+- `findings/index.json` — achados de segurança determinísticos (OWASP / CWE), particionados por pilar
 - `context-packs.json` — contexto por módulo, preparado para os agentes de IA
 
 <details>
@@ -82,8 +82,8 @@ Logo em seguida, você verá os artefatos do framework em `.legacy-squad/memory/
 2. Faz o scan do repositório e monta o inventário
 3. Executa o Compliance Engine com regras OWASP / CWE
 4. Gera Context Packs por módulo (eficientes em tokens)
-5. Instala os 9 agentes como slash commands na sua IDE
-6. Verifica a instalação (8 health checks)
+5. Instala os agentes como slash commands, mais o orchestrator `/legacy-squad`, na sua IDE
+6. Verifica a instalação (9 health checks)
 
 </details>
 
@@ -94,7 +94,7 @@ Abra sua IDE no projeto e acione o Security Agent.
 **Claude Code**
 ```bash
 claude
-/legacy-squad-security
+/legacy-squad:security
 ```
 
 **Codex CLI**
@@ -121,20 +121,20 @@ Depois de validar o primeiro agente, execute os quatro restantes e os quatro ger
 **Etapa 1 — Análise (rode em ordem)**
 
 ```bash
-/legacy-squad-security              # Security Agent
-/legacy-squad-architecture          # Architecture Agent
-/legacy-squad-legacy-code           # Legacy Code Agent
-/legacy-squad-business-rules        # Business Rules Agent
-/legacy-squad-modernization         # Modernization Agent
+/legacy-squad:security              # Security Agent
+/legacy-squad:architecture          # Architecture Agent
+/legacy-squad:legacy-code           # Legacy Code Agent
+/legacy-squad:business-rules        # Business Rules Agent
+/legacy-squad:modernization         # Modernization Agent
 ```
 
 **Etapa 2 — Artefatos consolidados (rode após a análise)**
 
 ```bash
-/legacy-squad-generate-prs          # Product Refactor Specification
-/legacy-squad-generate-sdd          # Software Design Document
-/legacy-squad-generate-mmp          # Modernization Master Plan
-/legacy-squad-generate-specs        # Execution Specs (um YAML por unidade de trabalho)
+/legacy-squad:generate-prs          # Product Refactor Specification
+/legacy-squad:generate-sdd          # Software Design Document
+/legacy-squad:generate-mmp          # Modernization Master Plan
+/legacy-squad:generate-specs        # Execution Specs (um YAML por unidade de trabalho)
 ```
 
 </details>
@@ -142,9 +142,13 @@ Depois de validar o primeiro agente, execute os quatro restantes e os quatro ger
 ### Outros comandos
 
 ```bash
+npx legacy-squad status             # Dashboard do lifecycle + próximo passo recomendado
+npx legacy-squad status --json      # Snapshot cru do lifecycle (consumido por /legacy-squad)
 npx legacy-squad scan               # Re-escaneia sem reinstalar agentes
 npx legacy-squad doctor             # Verifica a saúde da instalação
 ```
+
+Na sua IDE, o **orchestrator `/legacy-squad`** mostra onde o projeto está no lifecycle (Discovery → Assessment → Design → Planning → Execution), o Maturity Level e o próximo passo recomendado — lendo o mesmo estado determinístico que o `status`.
 
 ---
 
@@ -201,7 +205,7 @@ Em uma frase: o Legacy Squad combina **escaneamento determinístico** com **agen
              ▼               ▼               ▼
         ┌──────────────────────────────────────────┐
         │        .legacy-squad/memory/             │
-        │  repo-index.json | findings.json |       │
+        │  repo-index.json | findings/ |           │
         │  context-packs.json                      │
         └──────────────────┬───────────────────────┘
                            │
@@ -210,7 +214,7 @@ Em uma frase: o Legacy Squad combina **escaneamento determinístico** com **agen
         ┌──────────┐ ┌──────────┐ ┌──────────┐
         │ .claude/ │ │ AGENTS.md│ │ .cursor/ │
         │ commands/│ │ (Codex)  │ │ rules/   │
-        │ (Claude) │ │          │ │ (Cursor) │
+        │ (Claude) │ │          │ │ (soon)   │
         └────┬─────┘ └────┬─────┘ └────┬─────┘
              │             │             │
              └─────────────┼─────────────┘
@@ -218,8 +222,8 @@ Em uma frase: o Legacy Squad combina **escaneamento determinístico** com **agen
                     ┌──────▼──────┐
                     │  IDE + IA   │
                     │ (Claude Code│
-                    │  Codex,     │
-                    │  Cursor)    │
+                    │  & Codex)   │
+                    │  Cursor soon│
                     └──────┬──────┘
                            │
                     ┌──────▼──────┐
@@ -245,7 +249,7 @@ seu-projeto/
 │   │   └── project.yaml              # Configuração detectada
 │   ├── memory/
 │   │   ├── repo-index.json            # Inventário do repositório
-│   │   ├── findings.json              # Achados do compliance engine
+│   │   ├── findings/                  # Achados particionados por pilar (index.json + <pilar>.json)
 │   │   └── context-packs.json         # Contexto por módulo
 │   ├── outputs/
 │   │   ├── assessments/               # Assessments dos agentes (5 arquivos .md)
@@ -257,17 +261,18 @@ seu-projeto/
 │       └── install.log
 ├── .claude/
 │   └── commands/
+│       ├── legacy-squad.md            # /legacy-squad (orchestrator)
 │       └── legacy-squad/
-│           ├── security.md            # /legacy-squad-security
-│           ├── architecture.md        # /legacy-squad-architecture
-│           ├── legacy-code.md         # /legacy-squad-legacy-code
-│           ├── business-rules.md      # /legacy-squad-business-rules
-│           ├── modernization.md       # /legacy-squad-modernization
-│           ├── generate-prs.md        # /legacy-squad-generate-prs
-│           ├── generate-sdd.md        # /legacy-squad-generate-sdd
-│           ├── generate-mmp.md        # /legacy-squad-generate-mmp
-│           ├── generate-specs.md      # /legacy-squad-generate-specs
-│           └── scan.md                # /legacy-squad-scan
+│           ├── security.md            # /legacy-squad:security
+│           ├── architecture.md        # /legacy-squad:architecture
+│           ├── legacy-code.md         # /legacy-squad:legacy-code
+│           ├── business-rules.md      # /legacy-squad:business-rules
+│           ├── modernization.md       # /legacy-squad:modernization
+│           ├── generate-prs.md        # /legacy-squad:generate-prs
+│           ├── generate-sdd.md        # /legacy-squad:generate-sdd
+│           ├── generate-mmp.md        # /legacy-squad:generate-mmp
+│           ├── generate-specs.md      # /legacy-squad:generate-specs
+│           └── scan.md                # /legacy-squad:scan
 └── AGENTS.md                          # Compatibilidade Codex
 ```
 
@@ -275,53 +280,57 @@ seu-projeto/
 
 ## Agentes
 
-### Security Agent (`/legacy-squad-security`)
+### Orchestrator (`/legacy-squad`)
+
+Ponto de entrada único. Lê o estado determinístico do lifecycle e mostra onde o projeto está (Discovery → Assessment → Design → Planning → Execution), o Maturity Level e o próximo passo recomendado. Roda `legacy-squad status --json` por baixo e nunca inventa progresso.
+
+### Security Agent (`/legacy-squad:security`)
 
 Analisa autenticação, secrets, armazenamento inseguro, exposição de PII e conformidade de privacidade (LGPD, GDPR).
 
 **Referências:** OWASP MASVS V2, OWASP ASVS, CWE Top 25, LGPD, GDPR, NIST SSDF
 
-### Architecture Agent (`/legacy-squad-architecture`)
+### Architecture Agent (`/legacy-squad:architecture`)
 
 Mapeia a arquitetura atual com diagramas C4, identifica acoplamento, riscos estruturais e propõe uma arquitetura alvo incremental.
 
 **Referências:** C4 Model, Clean Architecture, arc42, ADR
 
-### Legacy Code Agent (`/legacy-squad-legacy-code`)
+### Legacy Code Agent (`/legacy-squad:legacy-code`)
 
 Identifica hotspots, duplicação, progresso da migração JS→TS, cobertura de testes e prioridades de refatoração.
 
 **Referências:** Clean Code, Sonar Rules, Cognitive Complexity
 
-### Business Rules Agent (`/legacy-squad-business-rules`)
+### Business Rules Agent (`/legacy-squad:business-rules`)
 
 Extrai regras de negócio escondidas no código — validações, permissões, fluxos, números mágicos, regras implícitas em catch blocks.
 
 **Referências:** DDD, Event Storming
 
-### Modernization Agent (`/legacy-squad-modernization`)
+### Modernization Agent (`/legacy-squad:modernization`)
 
 Sintetiza todos os assessments em um plano incremental com fases, rollback, Deployability Score (1-10) e Execution Readiness Score (0-100).
 
 **Referências:** Strangler Fig, Branch by Abstraction, Progressive Delivery
 
-### PRS Generator (`/legacy-squad-generate-prs`)
+### PRS Generator (`/legacy-squad:generate-prs`)
 
 Consolida todos os assessments no PRS (Product Refactor Specification) — o relatório de diagnóstico para tomadores de decisão.
 
-### SDD Generator (`/legacy-squad-generate-sdd`)
+### SDD Generator (`/legacy-squad:generate-sdd`)
 
 Produz o Software Design Document com arquitetura atual e alvo (diagramas Mermaid C4), inventário de componentes, integrações, preocupações transversais (segurança, observabilidade, tratamento de erros, configuração), restrições e Architecture Decision Records (ADRs) com alternativas consideradas.
 
 **Referências:** C4 Model, arc42, ADR, Clean Architecture
 
-### MMP Generator (`/legacy-squad-generate-mmp`)
+### MMP Generator (`/legacy-squad:generate-mmp`)
 
 Produz o Modernization Master Plan com roadmap em fases (Foundation → Core → Evolution, com fase Emergency opcional quando há achados críticos), plano de upgrade de stack, matriz de risco, estratégia de rollback por fase, Execution Readiness Score (0-100) justificado dimensão por dimensão, Deployability Score por fase e métricas de sucesso cobrindo segurança, qualidade de código, cobertura de testes e arquitetura.
 
 **Referências:** Strangler Fig, Branch by Abstraction, Progressive Delivery
 
-### Execution Specs Generator (`/legacy-squad-generate-specs`)
+### Execution Specs Generator (`/legacy-squad:generate-specs`)
 
 Decompõe o MMP em Execution Specs atômicas — um arquivo YAML por unidade de trabalho, individualmente deployável, com critérios de aceite binários, estratégia de rollback obrigatória, rastreabilidade de evidência (IDs de findings de compliance + referências de assessment), grafo de dependência entre specs e flag explícita `human_approval_required` para mudanças de alto risco.
 
@@ -479,7 +488,7 @@ legacy-squad/
 │   ├── context/      # Builder de context packs
 │   ├── rules/        # Compliance engine, catálogo de regras
 │   ├── agents/       # Definições de agentes, instalador, doctor
-│   └── output/       # Gerador do PRS
+│   └── output/       # Gerador do PRS + Dashboard renderer
 ├── apps/
 │   └── cli/          # Entry point da CLI (Commander.js)
 ├── templates/
@@ -491,7 +500,7 @@ legacy-squad/
 ### Testes
 
 ```bash
-npx vitest run          # 93 testes (domain, scanner, compliance, agents, installer)
+npx vitest run          # 131 testes (domain, scanner, compliance, agents, installer)
 npx vitest --watch      # Modo watch
 ```
 
