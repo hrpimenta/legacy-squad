@@ -45,8 +45,8 @@ interface StepDef {
  * as dependências duras (SDD←architecture-assessment, MMP←modernization-assessment, Specs←MMP),
  * já que os pré-requisitos sempre aparecem antes na sequência.
  *
- * Os slash commands instalados são flat com prefixo `legacy-squad-` (ex.: `legacy-squad-security.md`
- * em `.claude/commands/`), invocados como `/legacy-squad-<cmd>` — não há namespace por `:`.
+ * Os slash commands instalados ficam em subdiretório (`.claude/commands/legacy-squad/<cmd>.md`),
+ * o que no Claude Code vira o namespace `/legacy-squad:<cmd>` (validado empiricamente).
  */
 const STEPS: ReadonlyArray<StepDef> = [
   {
@@ -60,74 +60,74 @@ const STEPS: ReadonlyArray<StepDef> = [
   {
     id: 'security',
     label: 'Security assessment',
-    command: '/legacy-squad-security',
+    command: '/legacy-squad:security',
     phase: 'assessment',
     target: assessmentPath('security'),
-    reason: 'Inicie os assessments rodando `/legacy-squad-security`.',
+    reason: 'Inicie os assessments rodando `/legacy-squad:security`.',
   },
   {
     id: 'architecture',
     label: 'Architecture assessment',
-    command: '/legacy-squad-architecture',
+    command: '/legacy-squad:architecture',
     phase: 'assessment',
     target: assessmentPath('architecture'),
-    reason: 'Rode `/legacy-squad-architecture`.',
+    reason: 'Rode `/legacy-squad:architecture`.',
   },
   {
     id: 'legacy-code',
     label: 'Legacy code assessment',
-    command: '/legacy-squad-legacy-code',
+    command: '/legacy-squad:legacy-code',
     phase: 'assessment',
     target: assessmentPath('legacy-code'),
-    reason: 'Rode `/legacy-squad-legacy-code`.',
+    reason: 'Rode `/legacy-squad:legacy-code`.',
   },
   {
     id: 'business-rules',
     label: 'Business rules assessment',
-    command: '/legacy-squad-business-rules',
+    command: '/legacy-squad:business-rules',
     phase: 'assessment',
     target: assessmentPath('business-rules'),
-    reason: 'Rode `/legacy-squad-business-rules`.',
+    reason: 'Rode `/legacy-squad:business-rules`.',
   },
   {
     id: 'modernization',
     label: 'Modernization assessment',
-    command: '/legacy-squad-modernization',
+    command: '/legacy-squad:modernization',
     phase: 'assessment',
     target: assessmentPath('modernization'),
-    reason: 'Rode `/legacy-squad-modernization`.',
+    reason: 'Rode `/legacy-squad:modernization`.',
   },
   {
     id: 'generate-prs',
     label: 'PRS',
-    command: '/legacy-squad-generate-prs',
+    command: '/legacy-squad:generate-prs',
     phase: 'assessment',
     target: PRS_PATH,
-    reason: 'Consolide o diagnóstico com `/legacy-squad-generate-prs`.',
+    reason: 'Consolide o diagnóstico com `/legacy-squad:generate-prs`.',
   },
   {
     id: 'generate-sdd',
     label: 'SDD',
-    command: '/legacy-squad-generate-sdd',
+    command: '/legacy-squad:generate-sdd',
     phase: 'design',
     target: SDD_PATH,
-    reason: 'Gere o desenho técnico com `/legacy-squad-generate-sdd`.',
+    reason: 'Gere o desenho técnico com `/legacy-squad:generate-sdd`.',
   },
   {
     id: 'generate-mmp',
     label: 'MMP',
-    command: '/legacy-squad-generate-mmp',
+    command: '/legacy-squad:generate-mmp',
     phase: 'planning',
     target: MMP_PATH,
-    reason: 'Gere o plano mestre com `/legacy-squad-generate-mmp`.',
+    reason: 'Gere o plano mestre com `/legacy-squad:generate-mmp`.',
   },
   {
     id: 'generate-specs',
     label: 'Execution Specs',
-    command: '/legacy-squad-generate-specs',
+    command: '/legacy-squad:generate-specs',
     phase: 'execution',
     target: SPECS_PATH,
-    reason: 'Decomponha em specs com `/legacy-squad-generate-specs`.',
+    reason: 'Decomponha em specs com `/legacy-squad:generate-specs`.',
   },
 ];
 
