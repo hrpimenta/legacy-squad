@@ -98,9 +98,13 @@ export class Installer {
     await mkdir(path.join(effectiveRoot, '.legacy-squad', 'logs'), { recursive: true });
 
     // Step 7: Install Claude Code slash commands
-    const claudeCommandsDir = path.join(effectiveRoot, '.claude', 'commands', 'legacy-squad');
+    const claudeCommandsRoot = path.join(effectiveRoot, '.claude', 'commands');
+    const claudeCommandsDir = path.join(claudeCommandsRoot, 'legacy-squad');
     await mkdir(claudeCommandsDir, { recursive: true });
     await this.copySlashCommands(templateDir, claudeCommandsDir);
+    // DA-012: orchestrator /legacy-squad fica na RAÍZ de commands (não no subdir),
+    // para que o Claude Code o exponha como `/legacy-squad` puro (validado emp.).
+    await this.copyOrchestrator(templateDir, claudeCommandsRoot);
 
     // Step 8: Generate AGENTS.md for Codex
     await this.generateAgentsMd(effectiveRoot, repoIndex.project.name);
@@ -170,6 +174,26 @@ export class Installer {
       } catch {
         // Template não encontrado — ignora (pode não existir em todas as versões)
       }
+    }
+  }
+
+  /**
+   * DA-012: copia o template do orchestrator para `.claude/commands/legacy-squad.md`
+   * (raiz de commands, não subdir). No Claude Code, arquivos na raiz de commands viram
+   * o comando puro `/<filename>` — então este caminho expressa `/legacy-squad` (validado
+   * emp.). Falha silenciosamente se o template não existir, no mesmo estilo de copySlashCommands.
+   */
+  private async copyOrchestrator(
+    templateDir: string,
+    commandsRoot: string,
+  ): Promise<void> {
+    const sourcePath = path.join(templateDir, 'legacy-squad.md');
+    const targetPath = path.join(commandsRoot, 'legacy-squad.md');
+    try {
+      const content = await readFile(sourcePath, 'utf-8');
+      await writeFile(targetPath, content, 'utf-8');
+    } catch {
+      // Template não encontrado — ignora (alinhado com copySlashCommands)
     }
   }
 
