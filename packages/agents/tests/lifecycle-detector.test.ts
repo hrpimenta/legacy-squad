@@ -82,7 +82,7 @@ describe('LifecycleDetector — DA-012: state detection determinístico', () => 
     expect(snap.maturityLevel).toBe(2);
     expect(snap.maturityLabel).toBe('Understood');
     expect(snap.nextStep?.id).toBe('security');
-    expect(snap.nextStep?.command).toBe('/legacy-squad-security');
+    expect(snap.nextStep?.command).toBe('/legacy-squad:security');
 
     const discovery = snap.phases.find((p) => p.id === 'discovery')!;
     expect(discovery.doneCount).toBe(1);
@@ -110,7 +110,7 @@ describe('LifecycleDetector — DA-012: state detection determinístico', () => 
     expect(snap.maturityLevel).toBe(3);
     expect(snap.maturityLabel).toBe('Assessed');
     expect(snap.nextStep?.id).toBe('generate-prs');
-    expect(snap.nextStep?.command).toBe('/legacy-squad-generate-prs');
+    expect(snap.nextStep?.command).toBe('/legacy-squad:generate-prs');
   });
 
   it('não sugere generate-mmp enquanto faltar o modernization-assessment (dependência dura)', async () => {
