@@ -61,6 +61,16 @@ From a single `npx legacy-squad install` followed by 9 slash commands in the IDE
 - **Node.js ≥ 18**
 - **An AI-enabled IDE:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or [Codex CLI](https://github.com/openai/codex) ([Cursor](https://cursor.sh) soon)
 
+### 🧪 Don't have a legacy project handy? Use the demo
+
+```bash
+git clone https://github.com/hrpimenta/legacy-squad-demo.git
+cd legacy-squad-demo
+npx legacy-squad install
+```
+
+The [demo project](https://github.com/hrpimenta/legacy-squad-demo) is a small Node/Express API with intentional legacy problems — SQL injection, hardcoded secrets, fat controllers, duplicated logic, dead code. Perfect for a first run.
+
 ### 1. Install in your legacy project
 
 ```bash
@@ -495,7 +505,7 @@ legacy-squad/
 ### Tests
 
 ```bash
-npx vitest run          # 131 tests (domain, scanner, compliance, agents, installer)
+npx vitest run          # 134 tests (domain, scanner, compliance, agents, installer)
 npx vitest --watch      # Watch mode
 ```
 
