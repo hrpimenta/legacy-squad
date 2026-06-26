@@ -4,6 +4,8 @@ export { PromptBuilder } from './prompt-builder.js';
 export type { AgentPrompt } from './prompt-builder.js';
 export { AgentWriter } from './agent-writer.js';
 export { FindingsWriter } from './findings-writer.js';
+export { Rescanner } from './rescanner.js';
+export type { RescanResult } from './rescanner.js';
 export { Installer } from './installer.js';
 export type { InstallResult } from './installer.js';
 export { Doctor } from './doctor.js';

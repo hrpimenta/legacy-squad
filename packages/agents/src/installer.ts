@@ -1,10 +1,8 @@
-import { writeFile, mkdir, readFile, cp } from 'node:fs/promises';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { NodeFileSystem, RepoScanner } from '@legacy-squad/scanner';
-import { ContextBuilder } from '@legacy-squad/context';
-import { ComplianceEngine } from '@legacy-squad/rules';
+import { NodeFileSystem } from '@legacy-squad/scanner';
 import { ALL_AGENTS } from './agent-definitions.js';
-import { FindingsWriter } from './findings-writer.js';
+import { Rescanner } from './rescanner.js';
 
 export interface InstallResult {
   repoIndexPath: string;
@@ -34,30 +32,17 @@ export class Installer {
   async install(projectRoot: string, templateDir: string): Promise<InstallResult> {
     const fs = new NodeFileSystem();
 
-    // Step 1: Scan — determina effectiveRoot (pode diferir de projectRoot)
-    const scanner = new RepoScanner(fs);
-    const repoIndex = await scanner.scan(projectRoot);
-    const effectiveRoot = repoIndex.project.rootPath;
-
-    // Step 2: Compliance Engine
-    const compliance = new ComplianceEngine(fs);
-    const findings = await compliance.evaluate(effectiveRoot, repoIndex);
-
-    // Step 3: Context Packs
-    const contextBuilder = new ContextBuilder(fs);
-    const contextPacks = await contextBuilder.buildPacks(effectiveRoot, repoIndex);
-
-    // Step 4: Write .legacy-squad/memory/
-    const memoryDir = path.join(effectiveRoot, '.legacy-squad', 'memory');
-    await mkdir(memoryDir, { recursive: true });
-
-    const repoIndexPath = path.join(memoryDir, 'repo-index.json');
-    const findingsPath = path.join(memoryDir, 'findings', 'index.json');
-    const contextPacksPath = path.join(memoryDir, 'context-packs.json');
-
-    await writeFile(repoIndexPath, JSON.stringify(repoIndex, null, 2), 'utf-8');
-    await new FindingsWriter(fs).write(findings, memoryDir);
-    await writeFile(contextPacksPath, JSON.stringify(contextPacks, null, 2), 'utf-8');
+    // Steps 1–4: scan + compliance + context packs + escrita de toda a memory/.
+    // Delegado ao Rescanner — single source of truth do re-scan (DA-013, resolve DT-010).
+    const {
+      repoIndex,
+      findings,
+      contextPacks,
+      effectiveRoot,
+      repoIndexPath,
+      findingsPath,
+      contextPacksPath,
+    } = await new Rescanner(fs).rescan(projectRoot);
 
     // Step 5: Write .legacy-squad/config/
     const configDir = path.join(effectiveRoot, '.legacy-squad', 'config');

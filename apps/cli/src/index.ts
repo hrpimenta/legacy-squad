@@ -2,9 +2,8 @@ import { Command } from 'commander';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { Installer, Doctor, FindingsWriter, LifecycleDetector } from '@legacy-squad/agents';
-import { NodeFileSystem, RepoScanner } from '@legacy-squad/scanner';
-import { ComplianceEngine } from '@legacy-squad/rules';
+import { Installer, Doctor, Rescanner, LifecycleDetector } from '@legacy-squad/agents';
+import { NodeFileSystem } from '@legacy-squad/scanner';
 import { DashboardRenderer } from '@legacy-squad/output';
 
 const program = new Command();
@@ -107,29 +106,17 @@ program
 
     console.log(`\n🔍 Re-scanning: ${projectRoot}\n`);
 
-    const fs = new NodeFileSystem();
-    const scanner = new RepoScanner(fs);
-    const repoIndex = await scanner.scan(projectRoot);
-    const effectiveRoot = repoIndex.project.rootPath;
+    // DA-013: Rescanner é a single source of truth do re-scan (resolve DT-010).
+    const result = await new Rescanner(new NodeFileSystem()).rescan(projectRoot);
 
-    if (effectiveRoot !== projectRoot) {
-      console.log(`⚠️  Manifest found in subdirectory — using: ${effectiveRoot}\n`);
+    if (result.effectiveRoot !== result.requestedRoot) {
+      console.log(`⚠️  Manifest found in subdirectory — using: ${result.effectiveRoot}\n`);
     }
 
-    const compliance = new ComplianceEngine(fs);
-    const findings = await compliance.evaluate(effectiveRoot, repoIndex);
-
-    const { mkdir, writeFile } = await import('node:fs/promises');
-    const memoryDir = path.join(effectiveRoot, '.legacy-squad', 'memory');
-    await mkdir(memoryDir, { recursive: true });
-
-    await writeFile(path.join(memoryDir, 'repo-index.json'), JSON.stringify(repoIndex, null, 2), 'utf-8');
-    await new FindingsWriter(fs).write(findings, memoryDir);
-
-    console.log(`✅ Stack: ${repoIndex.stack.map((s) => s.name).join(', ')}`);
-    console.log(`📦 Modules: ${repoIndex.modules.length}`);
-    console.log(`🔒 Findings: ${findings.length}`);
-    console.log(`📄 Updated: ${path.join(effectiveRoot, '.legacy-squad', 'memory')}\n`);
+    console.log(`✅ Stack: ${result.repoIndex.stack.map((s) => s.name).join(', ')}`);
+    console.log(`📦 Modules: ${result.repoIndex.modules.length}`);
+    console.log(`🔒 Findings: ${result.findings.length}`);
+    console.log(`📄 Updated: ${result.memoryDir}\n`);
   });
 
 program

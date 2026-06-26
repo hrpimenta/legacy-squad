@@ -74,6 +74,12 @@
 **Decisão:** Opção (c). Determinismo onde dá (cálculo de progresso, maturity level e próximo passo em TS testável), IA só para síntese/conversa — mesma linha de DA-004/DA-010. O `LifecycleDetector` recebe `FileSystemPort` (somente-leitura) por injeção (DI/ISP, como DA-011). O estado vira a entidade de domínio `LifecycleSnapshot` em `@legacy-squad/core`. O slash command `/legacy-squad` (arquivo `.claude/commands/legacy-squad.md`, virando comando puro `/legacy-squad`) instrui a IA a rodar `npx legacy-squad status --json` e renderizar sobre o JSON, com fallback de leitura direta. Maturity Level segue FRAMEWORK_SPECIFICATION §10; fases seguem §3. Próximo passo derivado do primeiro gap na ordem canônica (scan → 5 assessments → PRS → SDD → MMP → Specs), o que satisfaz as dependências duras (SDD←architecture-assessment, MMP←modernization-assessment, Specs←MMP) sem regra extra. ERS/Deployability Score ficam fora do detector (saídas qualitativas da IA nos artefatos, não deriváveis por existência de arquivo).
 **Consequências:** Novo comando de CLI `status` e novo slash command `/legacy-squad` (alvo 1.3.0). `LifecycleSnapshot` no core consumido por CLI e renderer (Sessão 2). Reusa primitivas de leitura via `FileSystemPort` (`NodeFileSystem` já implementa). Não refatora o `Doctor` (usa `node:fs` direto, `pathExists` privado) — eventual duplicação conceitual de "exists" fica como candidato a DT-011. Entregue em 4 sessões na branch `feat/da-012-orchestrator` (Sessão 1: núcleo do detector via TDD).
 
+### [2026-06-25] DA-013: Caso de uso `Rescanner` consolidando o re-scan (scan + compliance + context + write memory)
+**Contexto:** A sequência "scan → effectiveRoot → compliance → grava `memory/`" estava duplicada no `installer.ts` (Steps 1–4) e no comando `scan` da CLI (DT-010). Mudanças no fluxo de escrita exigiam edição em dois lugares; além disso o `scan` gravava a `memory/` parcialmente (sem `context-packs.json`), divergindo do `install`.
+**Alternativas:** (a) `MemoryWriter` mínimo — extrai só a gravação de repo-index + findings; (b) `Rescanner` use case — extrai a operação completa de re-scan (scan + compliance + context packs + escrita de toda a `memory/`); (c) refatorar o `Installer` num pipeline de Steps composável.
+**Decisão:** Opção (b), variante **full**. `Rescanner` em `@legacy-squad/agents` recebe `FileSystemPort & FileWriterPort` por injeção (mesmo padrão de DA-011/DA-012), compõe `RepoScanner` + `ComplianceEngine` + `ContextBuilder` + `FindingsWriter` e devolve um `RescanResult` (`repoIndex`, `findings`, `contextPacks`, `effectiveRoot`, `requestedRoot`, `memoryDir`, `repoIndexPath`, `findingsPath`, `contextPacksPath`). O `Rescanner` é dono de **toda** a `memory/`. O `Installer` passa a compô-lo + (config, outputs, slash commands, orchestrator, AGENTS.md, install.log); o comando `scan` da CLI vira uma chamada single-line.
+**Consequências:** Resolve **DT-010** (single source of truth do re-scan). O método `install` cai de 9 para ~6 responsabilidades. Mudança de comportamento observável: o `scan` agora (re)grava `context-packs.json` — melhoria que alinha o comando à sua descrição ("update .legacy-squad/memory/") e elimina packs obsoletos. `InstallResult` inalterado. Abre caminho para reuso futuro (ex.: re-scan determinístico que o orchestrator possa precisar). Sem bump nesta sessão; o ganho do `scan` pode ser anotado num 1.3.1 futuro. Entregue na branch `refactor/dt-010-rescanner` via TDD estrito.
+
 ## Débitos Técnicos
 
 ### DT-001: AST-based detection para V2
@@ -117,11 +123,10 @@
 **Framework:** TAS Section 16 — Agentes
 **Resolução:** 6 templates de slash command reescritos com seção `## Stack-aware analysis` cobrindo PHP/Laravel/Symfony, .NET/ASP.NET, Java/Spring, React Native/mobile, Node backend. Coberto por 7 testes (multi-stack coverage + bias-check + invariantes de structure). Ver DA-009.
 
-### DT-010: Duplicação de orquestração de escrita de findings
+### DT-010: Duplicação de orquestração de escrita de findings  ✅ RESOLVIDO 2026-06-26
 **Framework:** Clean Architecture (DRY)
-**Contexto:** A sequência `mkdir(memoryDir)` + `new FindingsWriter(fs).write(findings, memoryDir)` é duplicada em `installer.ts` e `apps/cli/src/index.ts` (comando `scan`). Ambos instanciam `NodeFileSystem` e `FindingsWriter` independentemente.
-**Risco:** Médio — mudanças futuras no fluxo de escrita precisam ser aplicadas em 2 lugares.
-**Prazo:** Próximo PR após DA-011 (v1.2.x).
+**Contexto:** A sequência `mkdir(memoryDir)` + `new FindingsWriter(fs).write(findings, memoryDir)` era duplicada em `installer.ts` e `apps/cli/src/index.ts` (comando `scan`). Ambos instanciavam `NodeFileSystem` e `FindingsWriter` independentemente.
+**Resolução:** Caso de uso `Rescanner` (DA-013, Opção B-full) extraído em `packages/agents/src/rescanner.ts`. `Rescanner` é dono de toda a `memory/` (repo-index + findings particionado + context-packs). O `Installer` compõe `Rescanner` + (config, outputs, slash commands, orchestrator, AGENTS.md, install.log). O comando `scan` da CLI virou single-line via `Rescanner`. Mudança de comportamento: `scan` agora (re)grava `context-packs.json`. 134 testes verdes (131 + 3 do Rescanner). Branch `refactor/dt-010-rescanner`.
 
 ### DT-009: Custo de contexto dos geradores consolidados (PRS/SDD/MMP/Specs)
 **Framework:** PRD §15 (Riscos técnicos — excesso de contexto)
@@ -382,3 +387,30 @@
 
 ### DA-012 — concluída [2026-06-25]
 **Status:** entregue em **1.3.0** ao longo de 4 sessões (+ 1 correção 2.5 de formato). O framework ganhou um ponto de entrada único no IDE — o slash command `/legacy-squad` — que mostra deterministicamente onde o projeto está no lifecycle (Discovery → Assessment → Design → Planning → Execution), o `Maturity Level` (FRAMEWORK_SPEC §10) e qual o próximo passo. Cálculo do estado feito pelo `LifecycleDetector` em TS, via `FileSystemPort` injetada, exposto como entidade de domínio `LifecycleSnapshot` em `@legacy-squad/core` e como comando de CLI `status` (+`--json`). O orchestrator-slash chama o `status --json` e renderiza/orienta sem inventar progresso. Total: **131 testes verdes**, **6 novos arquivos**, **branch `feat/da-012-orchestrator`**. Débito candidato remanescente: `status` não-aware-de-aninhamento (DT a numerar). Passos manuais pós-fechamento: merge do PR + `npm publish` da 1.3.0 (estável); reinstalar no `appcooperado-main` com a 1.3.0 publicada para fechar o E2E do `/legacy-squad → status --json`.
+
+## Estado de DA-013
+
+### Sessão única — concluída [2026-06-26]
+**Escopo:** extração do caso de uso `Rescanner` via TDD estrito (Red → Green → Refactor), resolvendo DT-010.
+
+**Entregue:**
+- DA-013 registrada em `## Decisões Arquiteturais`.
+- `packages/agents/src/rescanner.ts` (novo): classe `Rescanner` + interface `RescanResult`. Recebe `FileSystemPort & FileWriterPort` por injeção (mesmo padrão DA-011/DA-012). Compõe `RepoScanner` + `ComplianceEngine` + `ContextBuilder` + `FindingsWriter`. Grava toda a `memory/` (`repo-index.json`, `findings/` particionado, `context-packs.json`). TSDoc completo.
+- `packages/agents/src/index.ts`: exporta `Rescanner` e `RescanResult`.
+- `packages/agents/tests/rescanner.test.ts` (novo): 3 testes com real temp dir + `NodeFileSystem` — (a) memory completa gravada incl. context-packs e sem findings.json monolítico; (b) effectiveRoot aninhado (DT-004) grava em inner/; (c) RescanResult com paths corretos.
+- `packages/agents/src/installer.ts`: Steps 1–4 substituídos por `Rescanner.rescan()`; imports órfãos removidos (`RepoScanner`, `ComplianceEngine`, `ContextBuilder`, `FindingsWriter`, `cp`). `InstallResult` inalterado.
+- `apps/cli/src/index.ts`: comando `scan` virou single-line via `Rescanner`; imports órfãos removidos (`RepoScanner`, `ComplianceEngine`, `FindingsWriter`, `await import('node:fs/promises')`). Imports de `@legacy-squad/rules` e `@legacy-squad/scanner/RepoScanner` eliminados da CLI.
+- Mudança de comportamento: `scan` agora (re)grava `context-packs.json` — alinha o comando à sua descrição e elimina packs obsoletos.
+- DT-010 marcado como RESOLVIDO.
+- 134 testes verdes (131 + 3 do Rescanner). Zero regressão.
+
+**Commits (ordem):**
+1. `docs(memory): registra DA-013 — Rescanner use case (resolve DT-010)`
+2. `test(agents): adiciona testes do Rescanner (vermelho)`
+3. `feat(agents): implementa Rescanner + export no barrel`
+4. `refactor(agents): installer compõe Rescanner e elimina escrita inline de memory`
+5. `refactor(cli): comando scan usa Rescanner (DT-010)`
+6. `docs(memory): fecha DT-010 e registra Sessão DA-013`
+
+### DA-013 — concluída [2026-06-26]
+**Status:** entregue em sessão única na branch `refactor/dt-010-rescanner` via TDD estrito. `Rescanner` é a single source of truth do re-scan, composta pelo `Installer` e pelo comando `scan` da CLI. DT-010 resolvido. Sem bump nesta sessão; ganho do `scan` pode ser anotado num 1.3.1 futuro. Passos manuais pós-fechamento: merge do PR.
